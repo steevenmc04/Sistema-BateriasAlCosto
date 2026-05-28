@@ -160,12 +160,12 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
   const renderDesktopCell = (item, column) => {
     if (h.tab === 'venta') {
       if (column.key === 'fecha') return <><div className="cell-main">{formatearFecha(item.creado_en)}</div><div className="cell-sub text-yellow-100">{item.producto_codigo || ''}</div></>;
-      if (column.key === 'producto') return <><div className="cell-main">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub uppercase">{item.producto_condicion || ''}</div></>;
-      if (column.key === 'cliente') return <><div className="cell-main">{item.cliente_nombre || 'Consumidor Final'}</div><div className="cell-sub">{item.cliente_documento || ''}</div></>;
+      if (column.key === 'producto') return <><div className="cell-main truncate">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub uppercase truncate">{item.producto_condicion || ''}</div></>;
+      if (column.key === 'cliente') return <><div className="cell-main truncate">{item.cliente_nombre || 'Consumidor Final'}</div><div className="cell-sub truncate">{item.cliente_documento || ''}</div></>;
       if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
       if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
       if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-      if (column.key === 'vendedor') return <span className="cell-main text-[12px] uppercase">{item.usuario_nombre}</span>;
+      if (column.key === 'vendedor') return <span className="cell-main text-[12px] uppercase truncate block">{item.usuario_nombre}</span>;
       if (column.key === 'acciones') {
         return (
           <div className="action-cell">
@@ -187,11 +187,11 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
 
     if (h.tab === 'compra') {
       if (column.key === 'fecha') return <span className="cell-main">{formatearFecha(item.creado_en)}</span>;
-      if (column.key === 'producto') return <><div className="cell-main">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub uppercase">{item.producto_condicion || ''}</div></>;
+      if (column.key === 'producto') return <><div className="cell-main truncate">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub uppercase truncate">{item.producto_condicion || ''}</div></>;
       if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
       if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
       if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-      if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase">{item.usuario_nombre}</span>;
+      if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase truncate block">{item.usuario_nombre}</span>;
       if (column.key === 'acciones') {
         return (
           <div className="action-cell">
@@ -204,11 +204,11 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
 
     if (column.key === 'fecha') return <span className="cell-main">{formatearFecha(item.creado_en)}</span>;
     if (column.key === 'tipo') return <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg ${item.tipo_operacion === 'salida' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>{item.tipo_operacion}</span>;
-    if (column.key === 'producto') return <><div className="cell-main">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub">{item.notas || ''}</div></>;
+    if (column.key === 'producto') return <><div className="cell-main truncate">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub truncate">{item.notas || ''}</div></>;
     if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
     if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
     if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-    if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase">{item.usuario_nombre}</span>;
+    if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase truncate block">{item.usuario_nombre}</span>;
     return null;
   };
 

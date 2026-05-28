@@ -148,9 +148,9 @@ const VistaProductos = ({ usuario }) => {
                 if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
                 if (column.key === 'producto') return (
                   <>
-                    <div className="cell-main">{row.marca}</div>
-                    <div className="cell-sub uppercase tracking-widest">{row.tipo_caja}</div>
-                    <div className="cell-sub">{row.condicion}</div>
+                    <div className="cell-main truncate">{row.marca}</div>
+                    <div className="cell-sub uppercase tracking-widest truncate">{row.tipo_caja}</div>
+                    <div className="cell-sub truncate">{row.condicion}</div>
                   </>
                 );
                 if (column.key === 'cantidad') return <span className="cell-main">{row.cantidad}</span>;
@@ -178,7 +178,7 @@ const VistaProductos = ({ usuario }) => {
               if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
               if (column.key === 'nombre') return (
                 <>
-                  <div className="cell-main">{row.nombre}</div>
+                  <div className="cell-main truncate">{row.nombre}</div>
                   <div className="cell-sub truncate">{row.descripcion}</div>
                 </>
               );

@@ -21,6 +21,11 @@ export default function TablePremium({
 }) {
   const content = (
     <table className={`table-premium ${minWidthClass} ${tableClassName}`.trim()}>
+      <colgroup>
+        {columns.map((column) => (
+          <col key={`col-${column.key || column.label}`} className={column.widthClassName || ''} />
+        ))}
+      </colgroup>
       <thead>
         <tr>
           {columns.map((column) => {
@@ -28,7 +33,7 @@ export default function TablePremium({
             return (
               <th
                 key={column.key || column.label}
-                className={`${column.widthClassName || ''} ${alignClass} ${column.headerClassName || ''}`.trim()}
+                className={`table-header-cell ${alignClass} ${column.headerClassName || ''}`.trim()}
               >
                 {column.label}
               </th>
@@ -90,4 +95,3 @@ export default function TablePremium({
     </div>
   )
 }
-

@@ -70,9 +70,9 @@ const VistaReportes = ({ usuario }) => {
     if (vp.tipo.startsWith('ventas')) {
       if (column.key === 'fecha') return <span className="cell-main">{formatearFecha(r.fecha)}</span>;
       if (column.key === 'tipo') return <span className="cell-sub uppercase text-yellow-100">{r.tipo}</span>;
-      if (column.key === 'codigo') return <span className="cell-main font-mono">{obtenerCodigoManual(r)}</span>;
-      if (column.key === 'cliente') return <span className="cell-main">{r.nombre_cliente}</span>;
-      if (column.key === 'vendedor') return <span className="cell-main">{r.usuario_nombre || '-'}</span>;
+      if (column.key === 'codigo') return <span className="cell-main font-mono truncate block">{obtenerCodigoManual(r)}</span>;
+      if (column.key === 'cliente') return <span className="cell-main truncate block">{r.nombre_cliente}</span>;
+      if (column.key === 'vendedor') return <span className="cell-main truncate block">{r.usuario_nombre || '-'}</span>;
       if (column.key === 'cantidad') return <span className="cell-main">{r.cantidad}</span>;
       if (column.key === 'pvp') return <span className="money-cell">${safeNumber(r.precio_unitario).toFixed(2)}</span>;
       if (column.key === 'costo') return <span className="money-cell">${safeNumber(r.costo_unitario || 0).toFixed(2)}</span>;
@@ -83,12 +83,12 @@ const VistaReportes = ({ usuario }) => {
 
     if (vp.tipo === 'compras') {
       if (column.key === 'fecha') return <span className="cell-main">{formatearFecha(r.fecha)}</span>;
-      if (column.key === 'marca') return <span className="cell-main">{r.marca}</span>;
-      if (column.key === 'caja') return <span className="cell-main">{r.tipo_caja}</span>;
+      if (column.key === 'marca') return <span className="cell-main truncate block">{r.marca}</span>;
+      if (column.key === 'caja') return <span className="cell-main truncate block">{r.tipo_caja}</span>;
       if (column.key === 'cond') return <span className="cell-main">{r.condicion}</span>;
       if (column.key === 'cantidad') return <span className="cell-main">{r.cantidad}</span>;
       if (column.key === 'total') return <span className="money-cell">${safeNumber(r.total).toFixed(2)}</span>;
-      if (column.key === 'proveedor') return <span className="cell-main">{r.proveedor}</span>;
+      if (column.key === 'proveedor') return <span className="cell-main truncate block">{r.proveedor}</span>;
       return null;
     }
 
@@ -106,7 +106,7 @@ const VistaReportes = ({ usuario }) => {
     if (column.key === 'clase') return <span className="cell-main uppercase">{r.clase}</span>;
     if (column.key === 'ref') return <span className="cell-main font-mono">{r.ref}</span>;
     if (column.key === 'marca') return <span className="cell-main">{r.marca}</span>;
-    if (column.key === 'caja') return <span className="cell-main">{r.tipo_caja || '—'}</span>;
+    if (column.key === 'caja') return <span className="cell-main truncate block">{r.tipo_caja || '—'}</span>;
     if (column.key === 'cantidad') return <span className="cell-main">{r.cantidad}</span>;
     if (column.key === 'costo') return <span className="money-cell">${safeNumber(r.precio).toFixed(2)}</span>;
     if (column.key === 'pvp') return <span className="money-cell">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</span>;
