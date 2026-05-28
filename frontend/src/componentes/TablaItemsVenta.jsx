@@ -106,7 +106,15 @@ export default function TablaItemsVenta({
   const isVenta = tipoModal === 'venta';
   const isCompra = tipoModal === 'compra';
 
-  const productosBateria = useMemo(() => (productos || []).filter((p) => esBateria(p)), [productos]);
+  const productosBateria = useMemo(() => {
+    if (tipoModal === 'chatarra') {
+      return (productos || []).filter((p) => {
+        const tipoCaja = String(getTipoCaja(p) || '').trim();
+        return tipoCaja && tipoCaja !== '-' && tipoCaja.toLowerCase() !== 'n/a';
+      });
+    }
+    return (productos || []).filter((p) => esBateria(p));
+  }, [productos, tipoModal]);
   const productosVarios = useMemo(() => (productos || []).filter((p) => !esBateria(p)), [productos]);
 
   const getBateriaMatch = (marca, tipoCaja) => {

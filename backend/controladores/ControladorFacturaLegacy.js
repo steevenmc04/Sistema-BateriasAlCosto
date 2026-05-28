@@ -40,6 +40,44 @@ export const verificarPorVenta = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/facturas/desde-venta/:venta_id
+// ─────────────────────────────────────────────────────────────────────────────
+export const crearDesdeVenta = async (req, res) => {
+  try {
+    const ventaId = Number(req.params.venta_id);
+    if (!Number.isInteger(ventaId) || ventaId <= 0) {
+      return res.status(400).json({ mensaje: 'ID de venta inválido.' });
+    }
+
+    const facturaExistente = await FacturaLegacy.obtenerPorVentaId(ventaId);
+    if (facturaExistente?.id) {
+      const factura = await FacturaLegacy.obtenerPorId(facturaExistente.id);
+      return res.status(200).json({
+        existe: true,
+        creada: false,
+        mensaje: 'La factura ya existe para esta venta.',
+        factura
+      });
+    }
+
+    const factura = await FacturaLegacy.crearDesdeVenta(ventaId, req.usuario.id);
+    return res.status(201).json({
+      existe: false,
+      creada: true,
+      mensaje: 'Factura generada correctamente desde la venta.',
+      factura
+    });
+  } catch (error) {
+    Logger.error('ControladorFacturaLegacy', 'crear factura desde venta:', error);
+    const detalle = (error?.message || '').toLowerCase();
+    if (detalle.includes('venta no encontrada')) {
+      return res.status(404).json({ mensaje: 'Venta no encontrada.' });
+    }
+    return res.status(500).json({ mensaje: 'Error interno al crear factura desde la venta.' });
+  }
+};
+
 // ─────────────────────────────────────────────────────────────
 // GET /api/facturas/:id
 // ─────────────────────────────────────────────────────────────

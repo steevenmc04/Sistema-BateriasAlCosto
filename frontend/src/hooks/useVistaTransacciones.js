@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { ventasAPI, comprasAPI, chatarraAPI, API, extraerMensajeError } from '../servicios/servicios.js';
+import { ventasAPI, comprasAPI, chatarraAPI, facturasAPI, API, extraerMensajeError } from '../servicios/servicios.js';
 import apiCliente from '../servicios/servicios.js';
 import { useOperacionMultiItem } from './useOperacionMultiItem.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
@@ -25,6 +25,7 @@ const normalizarProductoPOS = (p = {}) => {
     tipo_caja: p.tipo_caja ?? p.descripcion ?? p.nombre ?? '',
     categoria: p.categoria ?? p.nombre_categoria ?? '',
     tipo_producto: p.tipo_producto ?? p.tipo ?? '',
+    tipo_inventario: p.tipo_inventario ?? p.tipo ?? p.tipo_producto ?? '',
     es_bateria: p.es_bateria === true || p.es_bateria === 1 || p.es_bateria === '1',
     stock,
     stock_actual: stock,
@@ -52,8 +53,9 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
   const [exitoData, setExitoData] = useState(null);
 
   const [productos, setProductos] = useState([]);
-  const [baterias, setBaterias] = useState([]);
-  const [varios, setVarios] = useState([]);
+  const [productosBateria, setProductosBateria] = useState([]);
+  const [productosVarios, setProductosVarios] = useState([]);
+  const [productosChatarra, setProductosChatarra] = useState([]);
 
   const [clienteId, setClienteId] = useState('');
   const [clienteData, setClienteData] = useState(null);
@@ -78,15 +80,51 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
       const res = await apiCliente.get(`${API}/api/inventario/productos-pos?t=${ts}`);
       const productosArray = Array.isArray(res.data) ? res.data : res.data?.data || [];
       const productosNormalizados = productosArray.map(normalizarProductoPOS);
-      const bateriasFiltradas = productosNormalizados.filter((p) => esProductoBateria(p));
-      const variosFiltrados = productosNormalizados.filter((p) => !esProductoBateria(p));
+      const chatarraFiltrados = productosNormalizados.filter((p) => {
+        const tipoInventario = String(p.tipo_inventario || p.tipo || p.tipo_producto || '').toLowerCase();
+        if (tipoInventario === 'chatarra') return true;
+        const texto = [
+          p.categoria,
+          p.tipo_producto,
+          p.tipo,
+          p.nombre_categoria,
+          p.condicion,
+          p.descripcion,
+          p.nombre,
+        ].filter(Boolean).join(' ').toLowerCase();
+        return texto.includes('chatarra');
+      });
+      const bateriasFiltradas = productosNormalizados.filter((p) => {
+        const tipoInventario = String(p.tipo_inventario || p.tipo || p.tipo_producto || '').toLowerCase();
+        if (tipoInventario === 'chatarra') return false;
+        if (tipoInventario === 'bateria') return true;
+        const texto = [p.categoria, p.tipo_producto, p.tipo, p.condicion, p.descripcion, p.nombre]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (texto.includes('chatarra')) return false;
+        return esProductoBateria(p);
+      });
+      const variosFiltrados = productosNormalizados.filter((p) => {
+        const tipoInventario = String(p.tipo_inventario || p.tipo || p.tipo_producto || '').toLowerCase();
+        if (tipoInventario === 'chatarra') return false;
+        if (tipoInventario === 'varios') return true;
+        const texto = [p.categoria, p.tipo_producto, p.tipo, p.condicion, p.descripcion, p.nombre]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (texto.includes('chatarra')) return false;
+        return !esProductoBateria(p);
+      });
 
-      setBaterias(bateriasFiltradas);
-      setVarios(variosFiltrados);
+      setProductosBateria(bateriasFiltradas);
+      setProductosVarios(variosFiltrados);
+      setProductosChatarra(chatarraFiltrados);
       setProductos(productosNormalizados);
     } catch (err) {
-      setBaterias([]);
-      setVarios([]);
+      setProductosBateria([]);
+      setProductosVarios([]);
+      setProductosChatarra([]);
       setProductos([]);
       setErrorMsg(extraerMensajeError(err));
     }
@@ -203,6 +241,7 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
     });
     const articulos = itemsFiltrados.map(it => {
       const art = {
+        tipo: it.tipo,
         cantidad: Number(it.cantidad),
         precio_unitario: Number(it.precio_unitario) || 0, descuento: 0,
       };
@@ -274,6 +313,7 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
     });
     const articulos = itemsFiltrados.map(it => {
       const art = {
+        tipo: it.tipo,
         cantidad: Number(it.cantidad),
         precio_unitario: Number(it.precio_unitario) || 0,
       };
@@ -318,6 +358,7 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
     });
     const articulos = itemsFiltrados.map(it => {
       const art = {
+        tipo: it.tipo,
         cantidad: Number(it.cantidad),
         precio_unitario: Number(it.precio_unitario) || 0, notas: it.notas || '',
       };
@@ -389,6 +430,29 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
     cargarDatos();
   }, [ventaItems, compraItems, chatarraItems, cargarDatos]);
 
+  const generarFacturaDesdeVenta = useCallback(async (ventaId) => {
+    const idVenta = Number(ventaId);
+    if (!Number.isInteger(idVenta) || idVenta <= 0) {
+      return { ok: false, error: 'Venta inválida para facturación.' };
+    }
+
+    try {
+      const { data } = await facturasAPI.crearDesdeVenta(idVenta);
+      const factura = data?.factura || null;
+      if (data?.existe) {
+        notificarGlobal('La factura ya existe para esta venta.', 'advertencia');
+      } else {
+        notificarGlobal('Factura generada correctamente desde la venta.', 'exito');
+      }
+      return { ok: true, factura, existe: Boolean(data?.existe) };
+    } catch (err) {
+      const mensaje = extraerMensajeError(err);
+      setErrorMsg(mensaje);
+      notificarGlobal(mensaje, 'error');
+      return { ok: false, error: mensaje };
+    }
+  }, []);
+
   const vFiltradas = useMemo(() => {
     if (!busqueda) return ventas;
     const b = busqueda.toLowerCase();
@@ -417,6 +481,9 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
     cerrarModalExito, cargarDatos,
     ventaItems, compraItems, chatarraItems,
     productos,
+    productosBateria,
+    productosVarios,
+    productosChatarra,
     clienteId, setClienteId, clienteData, setClienteData,
     nombreCliente, setNombreCliente, documentoCliente, setDocumentoCliente,
     telefonoCliente, setTelefonoCliente, clienteEmail, setClienteEmail,
@@ -425,5 +492,6 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
     notas, setNotas,
     tipoChatarra, setTipoChatarra,
     erroresValidacion, setErroresValidacion,
+    generarFacturaDesdeVenta,
   };
 };

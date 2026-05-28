@@ -17,7 +17,7 @@ class Producto {
    */
   static async listarTodos({ buscar = '', categoriaId = null, soloActivos = true } = {}) {
     let sql = `
-      SELECT p.id, p.categoria_id, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
+      SELECT p.id, p.categoria_id, p.tipo, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
              p.descripcion, p.marca, p.modelo, p.condicion, p.tipo_caja, 
              p.precio_costo, p.precio_venta, p.stock_minimo, p.activo,
              COALESCE(s.cantidad, 0) AS stock_actual, p.creado_en
@@ -54,7 +54,7 @@ class Producto {
    */
   static async obtenerPorId(id) {
     const [filas] = await pool.query(
-      `SELECT p.id, p.categoria_id, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
+      `SELECT p.id, p.categoria_id, p.tipo, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
               p.descripcion, p.marca, p.modelo, p.condicion, p.tipo_caja, 
               p.precio_costo, p.precio_venta, p.stock_minimo, p.activo,
               COALESCE(s.cantidad, 0) AS stock_actual
@@ -72,7 +72,7 @@ class Producto {
     */
    static async buscarPorCodigo(codigo) {
      const [filas] = await pool.query(
-       `SELECT p.id, p.categoria_id, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
+       `SELECT p.id, p.categoria_id, p.tipo, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
               p.descripcion, p.marca, p.modelo, p.condicion, p.tipo_caja, 
               p.precio_costo, p.precio_venta, p.stock_minimo, p.activo,
               COALESCE(s.cantidad, 0) AS stock_actual

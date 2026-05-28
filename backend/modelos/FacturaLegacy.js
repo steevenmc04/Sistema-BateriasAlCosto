@@ -299,6 +299,11 @@ class FacturaLegacy {
   }
 
   static async crearDesdeVenta(ventaId, usuarioId) {
+    const existente = await FacturaLegacy.obtenerPorVentaId(ventaId);
+    if (existente?.id) {
+      return await FacturaLegacy.obtenerPorId(existente.id);
+    }
+
     const [ventas] = await pool.query(
       `SELECT v.*, c.nombre AS cliente_nombre, c.documento AS cliente_documento,
               c.email AS cliente_email, c.telefono AS cliente_telefono,
@@ -323,7 +328,7 @@ class FacturaLegacy {
       usuario_id: usuarioId,
       venta_pos_id: ventaId,
       con_iva: venta.monto_iva > 0,
-      descuento: venta.descuento,
+      descuento: Number(venta.descuento || 0),
       notas: `Factura generada desde Venta #${ventaId}`,
       cliente: {
         nombre: venta.cliente_nombre || 'CONSUMIDOR FINAL',
@@ -344,7 +349,7 @@ class FacturaLegacy {
       await pool.query('UPDATE facturas SET venta_pos_id = ? WHERE id = ?', [ventaId, factura.id]);
     }
 
-    return factura ? factura.id : null;
+    return factura || null;
   }
 
   static async obtenerConfigEmpresa() {

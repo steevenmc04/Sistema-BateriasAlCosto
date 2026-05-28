@@ -70,23 +70,35 @@ class ControladorChatarraMultiItem {
           });
         }
 
-        if (!art.producto_id && !art.marca_custom && !art.tipo_caja_custom) {
+        const tieneProducto = Number.isInteger(parseInt(art.producto_id));
+        const tieneDatosCustom = Boolean(
+          art.marca_custom ||
+          art.tipo_caja_custom ||
+          art.marca ||
+          art.tipo_caja ||
+          art.nombre ||
+          art.descripcion
+        );
+
+        if (!tieneProducto && !tieneDatosCustom) {
           return res.status(400).json({
             ok: false,
             error: `Artículo ${i + 1}: debe tener producto_id o marca_custom/tipo_caja_custom`
           });
         }
 
-        if (art.marca_custom || art.tipo_caja_custom) {
-          const resolvedId = await resolverProducto(art);
-          if (!resolvedId) {
-            return res.status(400).json({
-              ok: false,
-              error: `Artículo ${i + 1}: no se pudo resolver producto custom`
-            });
-          }
-          art.producto_id = resolvedId;
+        const resolvedId = await resolverProducto(
+          { ...art, tipo_inventario: 'chatarra' },
+          null,
+          { tipoInventario: 'chatarra' }
+        );
+        if (!resolvedId) {
+          return res.status(400).json({
+            ok: false,
+            error: `Artículo ${i + 1}: no se pudo resolver producto de chatarra`
+          });
         }
+        art.producto_id = resolvedId;
 
         if (!art.producto_id || !Number.isInteger(parseInt(art.producto_id))) {
           return res.status(400).json({

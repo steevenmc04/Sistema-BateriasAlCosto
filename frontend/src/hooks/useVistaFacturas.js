@@ -1,6 +1,24 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import apiCliente, { apiUrl, extraerMensajeError } from '../servicios/servicios.js';
+import apiCliente, { apiUrl, extraerMensajeError, facturasAPI, inventarioAPI } from '../servicios/servicios.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
+
+const crearUid = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `item-${Date.now()}-${Math.floor(Math.random() * 99999)}`;
+};
+
+const crearItemFactura = (tipo = 'bateria') => ({
+  uid: crearUid(),
+  tipo,
+  producto_id: '',
+  codigo: '',
+  descripcion: '',
+  cantidad: 1,
+  precio_unitario: 0,
+  descuento: 0,
+});
 
 /**
  * @hook useVistaFacturas
@@ -45,6 +63,7 @@ export function useVistaFacturas() {
   const [modalConfigEmpresa, setModalConfigEmpresa] = useState(false);
 
   const [configEmpresa, setConfigEmpresa] = useState(null);
+  const [productosPOS, setProductosPOS] = useState([]);
   
   const [cargandoConfig, setCargandoConfig] = useState(false);
   
@@ -56,7 +75,6 @@ export function useVistaFacturas() {
     cliente_direccion: '',
     items: [],
     con_iva: true,
-    descuento_global: 0,
     notas: '',
     venta_id: null
   };
@@ -94,22 +112,30 @@ export function useVistaFacturas() {
     }
   }, []);
 
+  const cargarProductosPOS = useCallback(async () => {
+    try {
+      const { data } = await inventarioAPI.listarProductosPOS({ t: Date.now() });
+      const rows = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      setProductosPOS(rows);
+    } catch {
+      setProductosPOS([]);
+    }
+  }, []);
+
   useEffect(() => {
     cargarFacturas();
     cargarConfig();
-  }, [cargarFacturas, cargarConfig]);
+    cargarProductosPOS();
+  }, [cargarFacturas, cargarConfig, cargarProductosPOS]);
 
   const totalesCalculados = useMemo(() => {
     let subtotal = 0;
-    let descuentoItems = 0;
 
     formFactura.items.forEach(item => {
       subtotal += parseFloat(item.cantidad || 0) * parseFloat(item.precio_unitario || 0);
-      descuentoItems += parseFloat(item.descuento || 0);
     });
 
-    const descuentoGlobal = parseFloat(formFactura.descuento_global || 0);
-    const baseImponible = subtotal - descuentoItems - descuentoGlobal;
+    const baseImponible = subtotal;
     
     let montoIva = 0;
     if (formFactura.con_iva && configEmpresa?.iva_porcentaje) {
@@ -120,20 +146,17 @@ export function useVistaFacturas() {
 
     return {
       subtotal,
-      descuento: descuentoItems + descuentoGlobal,
+      descuento: 0,
       base_imponible: baseImponible,
       monto_iva: montoIva,
       total
     };
   }, [formFactura, configEmpresa]);
 
-  const agregarItem = () => {
+  const agregarItem = (tipo = 'bateria') => {
     setFormFactura(prev => ({
       ...prev,
-      items: [
-        ...prev.items, 
-        { descripcion: '', cantidad: 1, precio_unitario: 0, descuento: 0 }
-      ]
+      items: [...prev.items, crearItemFactura(tipo)]
     }));
   };
 
@@ -153,6 +176,27 @@ export function useVistaFacturas() {
     });
   };
 
+  const seleccionarProductoItem = (index, producto) => {
+    if (!producto) return;
+    setFormFactura((prev) => {
+      const nuevosItems = [...prev.items];
+      const actual = nuevosItems[index] || crearItemFactura('bateria');
+      nuevosItems[index] = {
+        ...actual,
+        producto_id: producto.producto_id ?? producto.id ?? '',
+        codigo: producto.codigo || '',
+        descripcion:
+          producto.tipo_inventario === 'varios' || producto.tipo === 'varios'
+            ? (producto.nombre || producto.descripcion || '')
+            : [producto.marca, producto.tipo_caja, producto.condicion, producto.codigo]
+                .filter(Boolean)
+                .join(' - '),
+        precio_unitario: Number(producto.precio ?? producto.precio_venta ?? 0),
+      };
+      return { ...prev, items: nuevosItems };
+    });
+  };
+
   const crearFactura = async () => {
     try {
       const payload = {
@@ -163,14 +207,19 @@ export function useVistaFacturas() {
           telefono: formFactura.cliente_telefono,
           direccion: formFactura.cliente_direccion
         },
-        items: formFactura.items,
+        items: formFactura.items.map((item) => ({
+          descripcion: item.descripcion || item.nombre || 'Producto',
+          cantidad: Number(item.cantidad) || 1,
+          precio_unitario: Number(item.precio_unitario) || 0,
+          descuento: 0,
+        })),
         con_iva: formFactura.con_iva,
-        descuento: formFactura.descuento_global,
+        descuento: 0,
         notas: formFactura.notas,
         venta_id: formFactura.venta_id
       };
 
-      await apiCliente.post(apiUrl('/api/facturas'), payload);
+      await facturasAPI.crear(payload);
       setModalNuevaFactura(false);
       setFormFactura(formVacio);
       cargarFacturas();
@@ -264,16 +313,19 @@ export function useVistaFacturas() {
       cliente_telefono:   datosVenta.cliente_telefono    || '',
       cliente_direccion:  datosVenta.cliente_direccion   || '',
       con_iva:            datosVenta.con_iva !== undefined ? Boolean(datosVenta.con_iva) : true,
-      descuento_global:   datosVenta.descuento_global    ?? 0,
       notas:              datosVenta.notas               || '',
       items: Array.isArray(datosVenta.items) && datosVenta.items.length > 0
         ? datosVenta.items.map(item => ({
+            uid: crearUid(),
+            tipo: 'bateria',
+            producto_id: item.producto_id || '',
+            codigo: item.codigo || '',
             descripcion:     item.descripcion     || '',
             cantidad:        Number(item.cantidad) || 1,
             precio_unitario: Number(item.precio_unitario) || 0,
-            descuento:       Number(item.descuento) || 0,
+            descuento:       0,
           }))
-        : [{ descripcion: '', cantidad: 1, precio_unitario: 0, descuento: 0 }],
+        : [crearItemFactura('bateria')],
     });
 
     setModalNuevaFactura(true);
@@ -305,9 +357,11 @@ export function useVistaFacturas() {
     setFormFactura,
     configEmpresa,
     totalesCalculados,
+    productosPOS,
     agregarItem,
     eliminarItem,
     actualizarItem,
+    seleccionarProductoItem,
     crearFactura,
     anularFactura,
     descargarPDF,

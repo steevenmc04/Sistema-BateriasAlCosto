@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 import { Plus, X, Download, Trash2, Settings, PlusCircle, CheckCircle2 } from 'lucide-react';
 import { safeNumber } from '../utilidades/safeNumber.js';
 import { useVistaFacturas } from '../hooks/useVistaFacturas.js';
@@ -11,29 +12,13 @@ import SelectPremium from '../componentes/SelectPremium.jsx';
 import TablePremium from '../componentes/TablePremium.jsx';
 import { tienePermiso } from '../utilidades/permisosCliente.js';
 import PageTitle from '../componentes/PageTitle.jsx';
-
-const desglosarDescripcion = (desc) => {
-  let marca = '', caja = '', estado = '', codigo = '';
-  if (!desc) return { marca, caja, estado, codigo };
-  const partes = desc.split(/\s*-\s*/);
-  if (partes.length >= 4) {
-    marca = partes[0].trim(); caja = partes[1].trim(); estado = partes[2].trim(); codigo = partes[3].trim();
-  } else if (partes.length === 3) {
-    marca = partes[0].trim(); caja = partes[1].trim();
-    const u = partes[2].trim();
-    if (['Nueva', 'Usada', 'Nuevo', 'Usado'].includes(u)) { estado = u; } else { codigo = u; }
-  } else if (partes.length === 2) {
-    marca = partes[0].trim(); codigo = partes[1].trim();
-  } else { marca = desc.trim(); }
-  if (codigo.startsWith('[') && codigo.endsWith(']')) { codigo = codigo.slice(1, -1); }
-  return { marca, caja, estado, codigo };
-};
+import { esProductoBateria } from '../utilidades/esProductoBateria.js';
 
 const VistaFacturas = ({ usuario }) => {
   const {
     listaFacturas, cargando, error, filtros, setFiltros, modalNuevaFactura, setModalNuevaFactura,
     modalConfigEmpresa, setModalConfigEmpresa, formFactura, setFormFactura, configEmpresa,
-    totalesCalculados, agregarItem, eliminarItem, actualizarItem, crearFactura, anularFactura,
+    totalesCalculados, productosPOS, agregarItem, eliminarItem, actualizarItem, seleccionarProductoItem, crearFactura, anularFactura,
     descargarPDF, guardarConfig, abrirModalFacturaConVenta, facturaExistenteVenta,
     setFacturaExistenteVenta, reintentarSRI
   } = useVistaFacturas();
@@ -45,6 +30,16 @@ const VistaFacturas = ({ usuario }) => {
   const location = useLocation();
   const navigate = useNavigate();
   useEffect(() => {
+    if (location.state?.facturaGenerada?.id) {
+      const numero = location.state?.facturaGenerada?.numero_factura;
+      notificarGlobal(
+        numero ? `Factura ${numero} disponible en el listado.` : 'Factura generada correctamente.',
+        'exito'
+      );
+      navigate('/facturacion', { replace: true, state: {} });
+      return;
+    }
+
     if (location.state?.nuevaFacturaVenta) {
       abrirModalFacturaConVenta(location.state.nuevaFacturaVenta);
       navigate('/facturacion', { replace: true, state: {} });
@@ -56,6 +51,31 @@ const VistaFacturas = ({ usuario }) => {
   const esAdmin = tienePermiso(usuario, 'roles_admin');
 
   const [formConfig, setFormConfig] = useState({});
+  const productosBateriaOpciones = useMemo(
+    () =>
+      (productosPOS || [])
+        .filter((p) => esProductoBateria(p))
+        .map((p) => ({
+          value: String(p.producto_id ?? p.id),
+          label: [p.marca, p.tipo_caja].filter(Boolean).join(' · ') || p.nombre || p.codigo,
+          codigo: p.codigo || '',
+          producto: p,
+        })),
+    [productosPOS]
+  );
+
+  const productosVariosOpciones = useMemo(
+    () =>
+      (productosPOS || [])
+        .filter((p) => !esProductoBateria(p))
+        .map((p) => ({
+          value: String(p.producto_id ?? p.id),
+          label: p.nombre || p.descripcion || p.codigo,
+          codigo: p.codigo || '',
+          producto: p,
+        })),
+    [productosPOS]
+  );
   const columnasFacturas = [
     { key: 'numero', label: 'N° Factura', width: '120px' },
     { key: 'fecha', label: 'Fecha', width: '100px' },
@@ -262,60 +282,111 @@ const VistaFacturas = ({ usuario }) => {
                   </div>
                 </div>
 
-                    <div className="pt-4 border-t border-border-default">
-                      <div className="flex justify-between items-center mb-4">
+                <div className="pt-4 border-t border-border-default space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-yellow-100">Detalle de Factura</h3>
-                    <button onClick={agregarItem} className="text-yellow-100 text-[10px] font-black flex items-center gap-1.5 uppercase tracking-wider border border-border-default/40 px-3 py-1.5 rounded-xl hover:bg-yellow-100/10 transition-all"><PlusCircle size={13} /> Agregar línea</button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button
+                        type="button"
+                        onClick={() => agregarItem('bateria')}
+                        className="text-yellow-100 text-[10px] font-black flex items-center justify-center gap-1.5 uppercase tracking-wider border border-border-default/40 px-3 py-2 rounded-xl hover:bg-yellow-100/10 transition-all"
+                      >
+                        <PlusCircle size={13} /> Agregar Batería
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => agregarItem('varios')}
+                        className="text-text-primary text-[10px] font-black flex items-center justify-center gap-1.5 uppercase tracking-wider border border-border-default/40 px-3 py-2 rounded-xl hover:bg-white/5 transition-all"
+                      >
+                        <PlusCircle size={13} /> Agregar Varios
+                      </button>
+                    </div>
                   </div>
 
-                  {formFactura.items.length > 0 && (
-                    <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_1.2fr_minmax(120px,.7fr)_minmax(140px,.8fr)_minmax(120px,.7fr)_36px] gap-2 mb-2">
-                          {['Marca','Caja','Estado','Código','Cant.','P. Unit.','Subtotal'].map(t => <span key={t} className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t}</span>)}
-                      <span />
-                    </div>
-                  )}
-
-                  <div className="divide-y divide-[#2a2a2a]">
+                  <div className="space-y-3">
                     {formFactura.items.map((item, index) => {
-                      const parsed = desglosarDescripcion(item.descripcion);
-                      const handlePartChange = (field, value) => {
-                        const current = desglosarDescripcion(item.descripcion);
-                        current[field] = value;
-                        const parts = [];
-                        if (current.marca) parts.push(current.marca);
-                        if (current.caja) parts.push(current.caja);
-                        if (current.estado) parts.push(current.estado);
-                        if (current.codigo) parts.push(current.codigo);
-                        actualizarItem(index, 'descripcion', parts.join(' - '));
-                      };
+                      const opciones = item.tipo === 'varios' ? productosVariosOpciones : productosBateriaOpciones;
+                      const subtotalItem = safeNumber(item.cantidad) * safeNumber(item.precio_unitario);
+
                       return (
-                        <div key={index} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1.2fr_minmax(120px,.7fr)_minmax(140px,.8fr)_minmax(120px,.7fr)_36px] gap-3 md:gap-2 items-start md:items-center py-4 md:py-3 transition-colors border-b border-border-default/60 last:border-b-0">
-                          {['marca','caja','estado','codigo'].map((fld, fi) => (
-                            <div key={fld} className="space-y-1 md:space-y-0">
-                               <label className="md:hidden text-[9px] font-black uppercase text-text-muted">{['Marca','Caja','Estado','Código'][fi]}</label>
-                              <input type="text" placeholder={['Marca','Caja','Estado','Código'][fi]}
-                                className="bg-transparent text-text-primary text-sm outline-none placeholder:text-text-muted truncate w-full"
-                                value={parsed[fld]} onChange={(e) => handlePartChange(fld, e.target.value)} />
-                            </div>
-                          ))}
-                          <div className="space-y-1 md:space-y-0">
-                             <label className="md:hidden text-[9px] font-black uppercase text-text-muted">Cant.</label>
-                            <input type="number" min="1" className="input-premium text-center font-bold h-10" value={item.cantidad} onChange={(e) => actualizarItem(index, 'cantidad', e.target.value)} />
+                        <div key={item.uid || index} className="grid grid-cols-1 lg:grid-cols-[minmax(240px,2fr)_minmax(130px,1fr)_120px_140px_120px_48px] gap-3 items-end border-b border-border-default/50 pb-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">
+                              {item.tipo === 'varios' ? 'Producto Varios' : 'Producto Batería'}
+                            </label>
+                            <SelectPremium
+                              options={[
+                                { value: '', label: item.tipo === 'varios' ? 'Seleccione un producto varios' : 'Seleccione una batería' },
+                                ...opciones.map((o) => ({ value: o.value, label: o.label })),
+                              ]}
+                              value={String(item.producto_id || '')}
+                              onChange={(e) => {
+                                const seleccionado = opciones.find((o) => String(o.value) === String(e.target.value));
+                                actualizarItem(index, 'producto_id', e.target.value);
+                                if (seleccionado?.producto) {
+                                  seleccionarProductoItem(index, { ...seleccionado.producto, tipo_inventario: item.tipo });
+                                  actualizarItem(index, 'codigo', seleccionado.producto.codigo || '');
+                                }
+                              }}
+                              placeholder={item.tipo === 'varios' ? 'Seleccione un producto varios' : 'Seleccione una batería'}
+                              className="w-full"
+                            />
                           </div>
-                          <div className="space-y-1 md:space-y-0">
-                             <label className="md:hidden text-[9px] font-black uppercase text-text-muted">P. Unit</label>
-                             <div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">$</span>
-                              <input type="number" min="0" step="0.01" className="input-premium pl-5 text-right h-10" value={item.precio_unitario} onChange={(e) => actualizarItem(index, 'precio_unitario', e.target.value)} /></div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Código</label>
+                            <input
+                              type="text"
+                              className="input-premium h-11 font-mono"
+                              value={item.codigo || ''}
+                              onChange={(e) => actualizarItem(index, 'codigo', e.target.value)}
+                              placeholder="Código"
+                            />
                           </div>
-                           <div className="text-right text-sm tabular-nums">
-                             <label className="md:hidden text-[9px] font-black uppercase text-text-muted block mb-1">Subtotal</label>
-                            <span className="money-value">${(safeNumber(item.cantidad) * safeNumber(item.precio_unitario)).toFixed(2)}</span>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Cant.</label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="input-premium h-11 text-center font-bold"
+                              value={item.cantidad}
+                              onChange={(e) => actualizarItem(index, 'cantidad', e.target.value)}
+                            />
                           </div>
-                           <div className="flex justify-end"><button onClick={() => eliminarItem(index)} className="flex items-center justify-center w-12 h-12 md:w-8 md:h-8 rounded-xl text-error bg-error/10 md:bg-transparent hover:bg-error/10 transition-all"><Trash2 size={18} /></button></div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">P. Unit.</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className="input-premium h-11 text-right"
+                              value={item.precio_unitario}
+                              onChange={(e) => actualizarItem(index, 'precio_unitario', e.target.value)}
+                            />
+                          </div>
+
+                          <div className="space-y-1.5 text-right">
+                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted block">Subtotal</label>
+                            <span className="money-value text-base">${subtotalItem.toFixed(2)}</span>
+                          </div>
+
+                          <div className="h-11 flex items-center justify-end">
+                            <button
+                              type="button"
+                              onClick={() => eliminarItem(index)}
+                              className="action-btn action-btn-icon delete-btn"
+                              title="Eliminar línea"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
-                      {formFactura.items.length === 0 && (
+
+                    {formFactura.items.length === 0 && (
                       <div className="flex flex-col items-center py-8 text-text-muted gap-2">
                         <PlusCircle size={28} className="opacity-30" />
                         <p className="text-[10px] font-black uppercase tracking-widest">Agrega al menos una línea</p>

@@ -1,5 +1,6 @@
 ﻿import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Search, X, ArrowUpRight, ArrowDownLeft, Recycle, FileText, CheckCircle2 } from 'lucide-react';
 import { useVistaTransacciones } from '../hooks/useVistaTransacciones.js';
 import { usePaginacion } from '../hooks/usePaginacion.js';
@@ -30,6 +31,7 @@ const obtenerClaseOperacionChatarra = (tipoOperacion) => {
 const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
   const h = useVistaTransacciones(tabPredeterminado);
   const navigate = useNavigate();
+  const [generandoFactura, setGenerandoFactura] = useState(false);
 
   const {
     paginaActual, setPaginaActual,
@@ -100,6 +102,26 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
     </div>
   );
 
+  const manejarGenerarFacturaDesdeVenta = async () => {
+    if (generandoFactura) return;
+    setGenerandoFactura(true);
+    try {
+      const resultado = await h.generarFacturaDesdeVenta(h.exitoData?.id);
+      if (!resultado?.ok) return;
+      h.cerrarModalExito();
+      navigate('/facturacion', {
+        state: {
+          facturaGenerada: resultado.factura
+            ? { id: resultado.factura.id, numero_factura: resultado.factura.numero_factura }
+            : null,
+          ventaFacturadaId: h.exitoData?.id ?? null,
+        },
+      });
+    } finally {
+      setGenerandoFactura(false);
+    }
+  };
+
   const ModalExito = ({ tipo, id, total, tipoOperacion }) => {
     const titulo =
       tipo === 'venta'
@@ -157,10 +179,11 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
           {tipo === 'venta' && (
             <button
               type="button"
-              onClick={() => { h.cerrarModalExito(); navigate('/facturacion'); }}
+              onClick={manejarGenerarFacturaDesdeVenta}
+              disabled={generandoFactura}
               className="h-11 rounded-xl border border-yellow-100/30 bg-yellow-100 text-black text-[11px] font-black uppercase tracking-[0.12em] hover:brightness-110 transition-all"
             >
-              Generar Factura
+              {generandoFactura ? 'Generando...' : 'Generar Factura'}
             </button>
           )}
         </div>
@@ -454,7 +477,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 <div className="overflow-visible">
                   <TablaItemsVenta
                     items={h.ventaItems.items}
-                    productos={h.productos}
+                    productos={[...h.productosBateria, ...h.productosVarios]}
                     onActualizarCampo={h.ventaItems.actualizarCampo}
                     onEliminarItem={h.ventaItems.eliminarItem}
                     tipoModal="venta"
@@ -581,7 +604,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 <div className="overflow-visible">
                   <TablaItemsVenta
                     items={h.compraItems.items}
-                    productos={h.productos}
+                    productos={[...h.productosBateria, ...h.productosVarios]}
                     onActualizarCampo={h.compraItems.actualizarCampo}
                     onEliminarItem={h.compraItems.eliminarItem}
                     tipoModal="compra"
@@ -676,7 +699,11 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 <div className="overflow-visible">
                   <TablaItemsVenta
                     items={h.chatarraItems.items}
-                    productos={h.productos}
+                    productos={
+                      h.tipoChatarra === 'salida'
+                        ? h.productosChatarra
+                        : [...h.productosChatarra, ...h.productosBateria, ...h.productosVarios]
+                    }
                     onActualizarCampo={h.chatarraItems.actualizarCampo}
                     onEliminarItem={h.chatarraItems.eliminarItem}
                     tipoModal="chatarra"

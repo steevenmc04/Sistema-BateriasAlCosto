@@ -89,20 +89,13 @@ class ControladorInventario {
           p.marca,
           p.tipo_caja,
           p.condicion,
+          p.tipo,
           COALESCE(p.precio_venta, p.precio_costo, 0) AS precio,
           COALESCE(s.cantidad, 0) AS stock,
-          COALESCE(c.nombre, '') AS categoria,
-          CASE WHEN ib.id IS NOT NULL THEN 1 ELSE 0 END AS es_bateria,
-          CASE
-            WHEN ib.id IS NOT NULL THEN 'bateria'
-            WHEN iv.id IS NOT NULL THEN 'varios'
-            ELSE 'general'
-          END AS tipo_producto
+          COALESCE(c.nombre, '') AS categoria
         FROM productos p
         LEFT JOIN inventario_stock s ON s.producto_id = p.id
         LEFT JOIN categorias c ON c.id = p.categoria_id
-        LEFT JOIN inventario_baterias ib ON ib.codigo = p.codigo
-        LEFT JOIN inventario_varios iv ON iv.codigo = p.codigo
         WHERE p.activo = 1
         ORDER BY p.nombre ASC
       `);
@@ -112,7 +105,10 @@ class ControladorInventario {
       }
 
       const productos = rows.map((p) => {
-        const esBateria = ControladorInventario._esBateriaPOS(p);
+        const tipoInventario = ['bateria', 'varios', 'chatarra'].includes(p.tipo)
+          ? p.tipo
+          : (ControladorInventario._esBateriaPOS(p) ? 'bateria' : 'varios');
+        const esBateria = tipoInventario === 'bateria';
         const stock = Number(p.stock ?? 0);
         const precio = Number(p.precio ?? 0);
         return {
@@ -123,15 +119,16 @@ class ControladorInventario {
           marca: p.marca || '',
           tipo_caja: p.tipo_caja || '',
           categoria: p.categoria || '',
-          tipo_producto: esBateria ? 'bateria' : 'varios',
-          tipo: esBateria ? 'bateria' : 'varios',
+          tipo_producto: tipoInventario,
+          tipo: tipoInventario,
+          tipo_inventario: tipoInventario,
           es_bateria: esBateria,
           stock,
           stock_actual: stock,
           cantidad_disponible: stock,
           precio,
           precio_venta: precio,
-          condicion: p.condicion || (esBateria ? 'Nueva' : '-'),
+          condicion: p.condicion || (tipoInventario === 'chatarra' ? 'Chatarra' : esBateria ? 'Nueva' : '-'),
           estado: stock > 0 ? 'disponible' : 'sin_stock'
         };
       });
@@ -159,6 +156,36 @@ class ControladorInventario {
     const [baterias] = await pool.query(
       'SELECT codigo, marca, condicion, tipo_caja, cantidad, precio FROM inventario_baterias'
     );
+
+    await pool.query(
+      `UPDATE productos p
+       INNER JOIN inventario_baterias ib ON ib.codigo = p.codigo
+       SET
+         p.tipo = 'bateria',
+         p.marca = ib.marca,
+         p.tipo_caja = ib.tipo_caja,
+         p.condicion = ib.condicion,
+         p.precio_costo = COALESCE(ib.precio, p.precio_costo, 0),
+         p.precio_venta = COALESCE(ib.precio, p.precio_venta, 0),
+         p.activo = 1`
+    );
+
+    await pool.query(
+      `INSERT INTO inventario_stock (producto_id, cantidad)
+       SELECT p.id, COALESCE(ib.cantidad, 0)
+       FROM productos p
+       INNER JOIN inventario_baterias ib ON ib.codigo = p.codigo
+       LEFT JOIN inventario_stock s ON s.producto_id = p.id
+       WHERE s.producto_id IS NULL`
+    );
+
+    await pool.query(
+      `UPDATE inventario_stock s
+       INNER JOIN productos p ON p.id = s.producto_id
+       INNER JOIN inventario_baterias ib ON ib.codigo = p.codigo
+       SET s.cantidad = COALESCE(ib.cantidad, 0)`
+    );
+
     for (const b of baterias) {
       try {
         const [existe] = await pool.query(
@@ -170,8 +197,8 @@ class ControladorInventario {
         // Intentar con precio_venta; si falla, reintentar sin ella
         try {
           const [res] = await pool.query(
-            `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, precio_costo, precio_venta, activo)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+            `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, tipo, precio_costo, precio_venta, activo)
+             VALUES (?, ?, ?, ?, ?, ?, 'bateria', ?, ?, 1)`,
             [b.codigo, nombre, b.marca, b.tipo_caja, b.condicion, categoriaId, b.precio, b.precio]
           );
           await pool.query(
@@ -181,8 +208,8 @@ class ControladorInventario {
         } catch (innerErr) {
           try {
             const [res] = await pool.query(
-              `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, precio_costo, activo)
-               VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+              `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, tipo, precio_costo, activo)
+               VALUES (?, ?, ?, ?, ?, ?, 'bateria', ?, 1)`,
               [b.codigo, nombre, b.marca, b.tipo_caja, b.condicion, categoriaId, b.precio]
             );
             await pool.query(
@@ -223,11 +250,11 @@ class ControladorInventario {
 
     await pool.query(
       `INSERT INTO productos (
-         categoria_id, codigo, nombre, descripcion, marca, modelo, condicion, tipo_caja,
+         categoria_id, codigo, nombre, descripcion, marca, modelo, condicion, tipo, tipo_caja,
          precio_costo, precio_venta, stock_minimo, activo
        )
        SELECT
-         ?, iv.codigo, iv.nombre, iv.descripcion, iv.nombre, NULL, 'Nueva', '-',
+         ?, iv.codigo, iv.nombre, iv.descripcion, iv.nombre, NULL, 'Nueva', 'varios', '-',
          COALESCE(iv.precio, 0), COALESCE(iv.precio, 0), 0, 1
        FROM inventario_varios iv
        LEFT JOIN productos p ON p.codigo = iv.codigo
@@ -241,6 +268,7 @@ class ControladorInventario {
        SET
          p.nombre = iv.nombre,
          p.descripcion = iv.descripcion,
+         p.tipo = 'varios',
          p.marca = iv.nombre,
          p.tipo_caja = '-',
          p.condicion = 'Nueva',

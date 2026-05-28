@@ -21,6 +21,17 @@ const vacioVario = () => ({
 });
 
 export const obtenerCategoriaInventario = (producto = {}) => {
+  const tipoInventario = String(
+    producto.tipo_inventario ??
+    producto.tipo ??
+    producto.tipo_producto ??
+    ''
+  ).toLowerCase();
+
+  if (tipoInventario === 'chatarra') return 'chatarra';
+  if (tipoInventario === 'bateria') return 'bateria';
+  if (tipoInventario === 'varios') return 'varios';
+
   const texto = [
     producto.categoria,
     producto.tipo_producto,
@@ -73,6 +84,7 @@ export function useVistaProductos() {
   const [baterias, setBaterias] = useState([]);
   const [varios, setVarios] = useState([]);
   const [chatarra, setChatarra] = useState([]);
+  const [productosUnificados, setProductosUnificados] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroStock, setFiltroStock] = useState('TODOS');
@@ -107,10 +119,11 @@ export function useVistaProductos() {
   const recargar = useCallback(async () => {
     setCargando(true);
     try {
-      const [rB, rV, rC] = await Promise.allSettled([
+      const [rB, rV, rC, rP] = await Promise.allSettled([
         inventarioAPI.listarBaterias(),
         inventarioAPI.listarVarios(),
         chatarraAPI.listar({ limite: 500 }),
+        inventarioAPI.listarProductos({ soloActivos: true }),
       ]);
 
       if (rB.status === 'rejected') throw rB.reason;
@@ -127,9 +140,14 @@ export function useVistaProductos() {
             : [])
         : [];
 
+      const productosData = rP.status === 'fulfilled'
+        ? (Array.isArray(rP.value.data) ? rP.value.data : [])
+        : [];
+
       setBaterias(bateriasData);
       setVarios(variosData);
       setChatarra(chatarraData);
+      setProductosUnificados(productosData);
     } catch (e) {
       setErrorMsg(extraerMensajeError(e));
     } finally {
@@ -267,26 +285,23 @@ export function useVistaProductos() {
     }
   };
 
-  const inventarioClasificado = useMemo(() => {
-    return [...baterias, ...varios].map((producto) => ({
-      ...producto,
-      _categoriaInventario: obtenerCategoriaInventario(producto),
-    }));
-  }, [baterias, varios]);
-
-  const bateriasClasificadas = useMemo(
-    () => inventarioClasificado.filter((p) => p._categoriaInventario === 'bateria'),
-    [inventarioClasificado]
-  );
-
-  const variosClasificados = useMemo(
-    () => inventarioClasificado.filter((p) => p._categoriaInventario === 'varios'),
-    [inventarioClasificado]
-  );
-
   const chatarraDesdeInventario = useMemo(
-    () => inventarioClasificado.filter((p) => p._categoriaInventario === 'chatarra'),
-    [inventarioClasificado]
+    () =>
+      (productosUnificados || [])
+        .filter((p) => obtenerCategoriaInventario(p) === 'chatarra')
+        .map((p) => ({
+          id: `chatarra-prod-${p.id}`,
+          codigo: p.codigo || `CHAT-${p.id}`,
+          nombre: p.nombre || [p.marca, p.tipo_caja].filter(Boolean).join(' · ') || 'Producto chatarra',
+          descripcion: p.descripcion || p.condicion || 'Chatarra',
+          condicion: p.condicion || 'Chatarra',
+          cantidad: Number(p.stock_actual ?? p.cantidad ?? 0),
+          precio: Number(p.precio_venta ?? p.precio_costo ?? 0),
+          estado_stock: Number(p.stock_actual ?? p.cantidad ?? 0) <= 0 ? 'sin_stock' : 'con_stock',
+          tipo_operacion: '',
+          creado_en: p.creado_en || p.actualizado_en,
+        })),
+    [productosUnificados]
   );
 
   const chatarraDesdeMovimientos = useMemo(() => {
@@ -307,17 +322,19 @@ export function useVistaProductos() {
   }, [chatarra]);
 
   const bFiltradas = useMemo(() => {
-    const conStock = filtrarPorStock(bateriasClasificadas, filtroStock);
+    const conStock = filtrarPorStock(baterias, filtroStock);
     return filtrarPorTexto(conStock, busqueda, ['codigo', 'marca', 'tipo_caja']);
-  }, [bateriasClasificadas, busqueda, filtroStock]);
+  }, [baterias, busqueda, filtroStock]);
 
   const vFiltradas = useMemo(() => {
-    const conStock = filtrarPorStock(variosClasificados, filtroStock);
+    const conStock = filtrarPorStock(varios, filtroStock);
     return filtrarPorTexto(conStock, busqueda, ['codigo', 'nombre', 'descripcion']);
-  }, [variosClasificados, busqueda, filtroStock]);
+  }, [varios, busqueda, filtroStock]);
 
   const chFiltradas = useMemo(() => {
-    const base = [...chatarraDesdeInventario, ...chatarraDesdeMovimientos];
+    const base = chatarraDesdeInventario.length > 0
+      ? chatarraDesdeInventario
+      : chatarraDesdeMovimientos;
     const conStock = filtrarPorStock(base, filtroStock);
     return filtrarPorTexto(conStock, busqueda, ['codigo', 'nombre', 'descripcion', 'tipo_operacion']);
   }, [chatarraDesdeInventario, chatarraDesdeMovimientos, busqueda, filtroStock]);

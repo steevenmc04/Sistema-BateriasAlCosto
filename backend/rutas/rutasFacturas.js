@@ -1,7 +1,7 @@
 import express from 'express';
 import { 
   listar, obtener, crear, anular, 
-  getConfig, updateConfig, generarPDF, verificarPorVenta 
+  getConfig, updateConfig, generarPDF, verificarPorVenta, crearDesdeVenta
 } from '../controladores/ControladorFacturaLegacy.js';
 import ControladorFacturaSRI from '../controladores/ControladorFacturaSRI.js';
 import { verificarToken } from '../middleware/autenticacion.js';
@@ -42,6 +42,7 @@ enrutador.post('/:id/enviar-sri', exigirPermiso('facturas.sri'), ControladorFact
 
 // --- Consulta por Venta ID ---
 enrutador.get('/venta/:venta_id', exigirPermiso('facturacion_ver'), verificarPorVenta);
+enrutador.post('/desde-venta/:venta_id', exigirPermiso('facturacion_emitir'), crearDesdeVenta);
 
 // --- Rutas por ID de Factura ---
 enrutador.get('/:id', exigirPermiso('facturacion_ver'), obtener);

@@ -3,6 +3,14 @@ const normalizar = (valor) => String(valor || '').trim().toLowerCase();
 export function esBateria(producto) {
   if (!producto || typeof producto !== 'object') return false;
 
+  const tipoInventario = normalizar(
+    producto.tipo_inventario ??
+    producto.tipo_producto ??
+    producto.tipo
+  );
+  if (tipoInventario === 'chatarra' || tipoInventario === 'varios') return false;
+  if (tipoInventario === 'bateria') return true;
+
   if (producto.es_bateria === true || Number(producto.es_bateria) === 1) return true;
   if (producto.es_bateria === false || Number(producto.es_bateria) === 0) return false;
 

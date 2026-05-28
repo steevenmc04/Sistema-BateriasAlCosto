@@ -144,7 +144,9 @@ class ControladorVentasMultiItem {
         }
 
         if (art.marca_custom || art.tipo_caja_custom) {
-          const resolvedId = await resolverProducto(art);
+          const resolvedId = await resolverProducto(art, null, {
+            tipoInventario: art.tipo === 'varios' ? 'varios' : 'bateria'
+          });
           if (!resolvedId) {
             return res.status(400).json({
               ok: false,

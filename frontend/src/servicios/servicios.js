@@ -53,6 +53,8 @@ export const authAPI = {
 };
 
 export const inventarioAPI = {
+  listarProductos: (params) => apiCliente.get(`${API}/api/inventario/productos`, { params }),
+  listarProductosPOS: (params) => apiCliente.get(`${API}/api/inventario/productos-pos`, { params }),
   listarBaterias: () => apiCliente.get(`${API}/api/inventario/baterias`),
   buscarBaterias: (q) => apiCliente.get(`${API}/api/inventario/baterias/buscar`, { params: { q } }),
   obtenerCatalogos: () => apiCliente.get(`${API}/api/inventario/baterias/catalogos`),
@@ -65,6 +67,18 @@ export const inventarioAPI = {
   crearVario: (payload) => apiCliente.post(`${API}/api/inventario/varios`, payload),
   actualizarVario: (id, payload) => apiCliente.put(`${API}/api/inventario/varios/${id}`, payload),
   eliminarVario: (id) => apiCliente.delete(`${API}/api/inventario/varios/${id}`),
+};
+
+export const facturasAPI = {
+  listar: (params) => apiCliente.get(`${API}/api/facturas`, { params }),
+  obtener: (id) => apiCliente.get(`${API}/api/facturas/${id}`),
+  crear: (payload) => apiCliente.post(`${API}/api/facturas`, payload),
+  anular: (id) => apiCliente.patch(`${API}/api/facturas/${id}/anular`),
+  descargarPDF: (id) => apiCliente.get(`${API}/api/facturas/${id}/pdf`, { responseType: 'blob' }),
+  verificarPorVenta: (ventaId) => apiCliente.get(`${API}/api/facturas/venta/${ventaId}`),
+  crearDesdeVenta: (ventaId) => apiCliente.post(`${API}/api/facturas/desde-venta/${ventaId}`),
+  obtenerConfig: () => apiCliente.get(`${API}/api/facturas/config`),
+  guardarConfig: (payload) => apiCliente.put(`${API}/api/facturas/config`, payload),
 };
 
 export const informesAPI = {
