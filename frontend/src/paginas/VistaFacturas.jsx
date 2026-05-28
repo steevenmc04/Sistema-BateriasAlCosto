@@ -57,12 +57,12 @@ const VistaFacturas = ({ usuario }) => {
 
   const [formConfig, setFormConfig] = useState({});
   const columnasFacturas = [
-    { key: 'numero', label: 'N° Factura', width: '130px' },
-    { key: 'fecha', label: 'Fecha', width: '110px' },
+    { key: 'numero', label: 'N° Factura', width: '120px' },
+    { key: 'fecha', label: 'Fecha', width: '100px' },
     { key: 'cliente', label: 'Cliente' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
-    { key: 'estado', label: 'Estado', width: '130px', align: 'center' },
-    { key: 'acciones', label: 'Acciones', width: '130px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
+    { key: 'estado', label: 'Estado', width: '120px', align: 'center' },
+    { key: 'acciones', label: 'Acciones', width: '120px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const abrirConfigEmpresa = () => {
     setFormConfig(configEmpresa || { razon_social: '', ruc: '', direccion: '', telefono: '', email: '', ciudad: 'Guayaquil', pais: 'Ecuador', prefijo_factura: 'FAC', iva_porcentaje: 15 });

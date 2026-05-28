@@ -35,9 +35,9 @@ const VistaReportes = ({ usuario }) => {
     { key: 'fecha', label: 'Fecha', width: '110px' },
     { key: 'tipo', label: 'Tipo', width: '90px' },
     { key: 'codigo', label: 'Código', width: '110px' },
-    { key: 'cliente', label: 'Cliente', width: '220px' },
-    { key: 'vendedor', label: 'Vendido por', width: '170px' },
-    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
+    { key: 'cliente', label: 'Cliente', width: '200px' },
+    { key: 'vendedor', label: 'Vendido por', width: '160px' },
+    { key: 'cantidad', label: 'Cant.', width: '75px', align: 'center' },
     { key: 'iva', label: 'IVA?', width: '90px', align: 'center' },
     { key: 'total', label: 'Total', width: '120px', align: 'right' },
   ];
@@ -62,12 +62,10 @@ const VistaReportes = ({ usuario }) => {
   const columnasInventario = [
     { key: 'clase', label: 'Clase', width: '100px' },
     { key: 'ref', label: 'Ref', width: '120px' },
-    { key: 'marca', label: 'Marca', width: '190px' },
-    { key: 'caja', label: 'Caja', width: '160px' },
+    { key: 'marca', label: 'Marca', width: '210px' },
+    { key: 'caja', label: 'Caja', width: '180px' },
     { key: 'cantidad', label: 'Cantidad', width: '80px', align: 'center' },
-    { key: 'costo', label: 'Costo Unit.', width: '120px', align: 'right' },
-    { key: 'pvp', label: 'PVP Sugerido', width: '120px', align: 'right' },
-    { key: 'stock', label: 'Stock Valorizado', width: '130px', align: 'right' },
+    { key: 'stock', label: 'Stock Valorizado', width: '150px', align: 'right' },
     { key: 'estado', label: 'Estado', width: '130px', align: 'center' },
   ];
 
@@ -111,8 +109,6 @@ const VistaReportes = ({ usuario }) => {
     if (column.key === 'marca') return <span className="cell-main">{r.marca}</span>;
     if (column.key === 'caja') return <span className="cell-main truncate block">{r.tipo_caja || '—'}</span>;
     if (column.key === 'cantidad') return <span className="cell-main">{r.cantidad}</span>;
-    if (column.key === 'costo') return <span className="money-cell">${safeNumber(r.precio).toFixed(2)}</span>;
-    if (column.key === 'pvp') return <span className="money-cell">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</span>;
     if (column.key === 'stock') return <span className="money-cell">${(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2)}</span>;
     if (column.key === 'estado') {
       return (
@@ -263,7 +259,7 @@ const VistaReportes = ({ usuario }) => {
                   ? 'min-w-[960px]'
                   : vp.tipo === 'chatarra'
                     ? 'min-w-[920px]'
-                    : 'min-w-[1120px]'
+                    : 'min-w-[980px]'
             }
             renderCell={renderDesktopCell}
             footer={

@@ -129,32 +129,32 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
   ) : null;
 
   const columnasVenta = [
-    { key: 'fecha', label: 'Fecha', width: '120px' },
-    { key: 'producto', label: 'Producto', width: '230px' },
-    { key: 'cliente', label: 'Cliente', width: '230px' },
-    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
-    { key: 'items', label: 'Items', width: '80px', align: 'center' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
-    { key: 'vendedor', label: 'Vendedor', width: '170px' },
-    { key: 'acciones', label: 'Acciones', width: '100px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'fecha', label: 'Fecha', width: '115px' },
+    { key: 'producto', label: 'Producto', width: '220px' },
+    { key: 'cliente', label: 'Cliente', width: '210px' },
+    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
+    { key: 'items', label: 'Items', width: '70px', align: 'center' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
+    { key: 'vendedor', label: 'Vendedor', width: '150px' },
+    { key: 'acciones', label: 'Acciones', width: '90px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const columnasCompra = [
-    { key: 'fecha', label: 'Fecha', width: '120px' },
-    { key: 'producto', label: 'Producto', width: '230px' },
-    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
-    { key: 'items', label: 'Items', width: '80px', align: 'center' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
-    { key: 'usuario', label: 'Usuario', width: '170px' },
-    { key: 'acciones', label: 'Acciones', width: '100px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'fecha', label: 'Fecha', width: '115px' },
+    { key: 'producto', label: 'Producto', width: '220px' },
+    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
+    { key: 'items', label: 'Items', width: '70px', align: 'center' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
+    { key: 'usuario', label: 'Usuario', width: '150px' },
+    { key: 'acciones', label: 'Acciones', width: '90px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const columnasChatarra = [
-    { key: 'fecha', label: 'Fecha', width: '120px' },
+    { key: 'fecha', label: 'Fecha', width: '115px' },
     { key: 'tipo', label: 'Tipo', width: '100px', align: 'center' },
-    { key: 'producto', label: 'Producto', width: '230px' },
-    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
-    { key: 'items', label: 'Items', width: '80px', align: 'center' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
-    { key: 'usuario', label: 'Usuario', width: '170px' },
+    { key: 'producto', label: 'Producto', width: '220px' },
+    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
+    { key: 'items', label: 'Items', width: '70px', align: 'center' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
+    { key: 'usuario', label: 'Usuario', width: '150px' },
   ];
 
   const renderDesktopCell = (item, column) => {
@@ -165,7 +165,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
       if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
       if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
       if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-      if (column.key === 'vendedor') return <span className="cell-main text-[12px] uppercase block">{item.usuario_nombre}</span>;
+      if (column.key === 'vendedor') return <span className="cell-main text-[12px] uppercase block truncate">{item.usuario_nombre}</span>;
       if (column.key === 'acciones') {
         return (
           <div className="action-cell">
@@ -191,7 +191,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
       if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
       if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
       if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-      if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase block">{item.usuario_nombre}</span>;
+      if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase block truncate">{item.usuario_nombre}</span>;
       if (column.key === 'acciones') {
         return (
           <div className="action-cell">
@@ -208,7 +208,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
     if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
     if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
     if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-    if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase block">{item.usuario_nombre}</span>;
+    if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase block truncate">{item.usuario_nombre}</span>;
     return null;
   };
 
@@ -318,7 +318,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             loading={h.cargando}
             loadingMessage="Cargando historial..."
             emptyMessage="No hay transacciones registradas"
-            minWidthClass={h.tab === 'venta' ? 'min-w-[1200px]' : h.tab === 'compra' ? 'min-w-[980px]' : 'min-w-[980px]'}
+            minWidthClass={h.tab === 'venta' ? 'min-w-[1155px]' : h.tab === 'compra' ? 'min-w-[900px]' : 'min-w-[1000px]'}
             renderCell={renderDesktopCell}
             footer={
               <Paginacion

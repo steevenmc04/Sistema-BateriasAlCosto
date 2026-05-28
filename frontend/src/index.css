@@ -701,3 +701,227 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 }
 
 /* End of component styles */
+
+/* Final unified table system */
+.table-card,
+.table-shell {
+  width: 100%;
+  background: #0A0A0A;
+  border: 1px solid rgba(227,198,106,.14);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(227,198,106,.35);
+  border-radius: 999px;
+}
+
+.table-modern,
+.table-premium {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.table-modern th,
+.table-premium th {
+  height: 48px;
+  padding: 0 12px;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: #E3C66A;
+  font-weight: 800;
+  background: #111111;
+  border-bottom: 1px solid rgba(227,198,106,.12);
+  white-space: nowrap;
+  text-align: left;
+  overflow: visible;
+  text-overflow: unset;
+  vertical-align: middle;
+}
+
+.table-modern td,
+.table-premium td,
+.table-cell,
+.table-body-cell {
+  height: 60px;
+  padding: 10px 12px;
+  color: #F2EFE6;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  vertical-align: middle;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.table-modern tbody tr:hover,
+.table-premium tbody tr:hover {
+  background: rgba(227,198,106,.035);
+}
+
+.cell-main {
+  color: #F2EFE6;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cell-sub {
+  color: rgba(242,239,230,.68);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cell-center {
+  text-align: center;
+}
+
+.cell-right {
+  text-align: right;
+}
+
+.money-cell {
+  color: #00E676;
+  font-size: 15px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+  text-align: right;
+  line-height: 1;
+}
+
+.action-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.action-btn {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(227,198,106,.2);
+  background: rgba(255,255,255,.02);
+  color: #F2EFE6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s ease;
+}
+
+.action-btn:hover {
+  border-color: #E3C66A;
+  background: rgba(227,198,106,.08);
+}
+
+.action-btn-text {
+  min-width: 70px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.action-btn-icon {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+}
+
+.delete-btn {
+  border-color: rgba(255,77,77,.25);
+  color: #FF4D4D;
+}
+
+.delete-btn:hover {
+  background: rgba(255,77,77,.08);
+}
+
+.pagination-modern,
+.pagination-premium {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 220px 1fr 220px;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: #0A0A0A;
+  border-top: 1px solid rgba(227,198,106,.12);
+}
+
+.pagination-left,
+.pagination-center,
+.pagination-right {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.pagination-left {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.pagination-center {
+  justify-content: center;
+  color: #F2EFE6;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.pagination-right {
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.pagination-select {
+  width: 120px;
+  min-width: 120px;
+  height: 44px;
+}
+
+.pagination-select > .space-y-2 {
+  gap: 0;
+}
+
+@media (max-width: 768px) {
+  .pagination-modern,
+  .pagination-premium {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .pagination-left,
+  .pagination-center,
+  .pagination-right {
+    justify-content: center;
+    width: 100%;
+  }
+}

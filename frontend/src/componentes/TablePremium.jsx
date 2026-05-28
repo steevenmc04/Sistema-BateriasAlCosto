@@ -20,7 +20,7 @@ export default function TablePremium({
   footer = null,
 }) {
   const content = (
-    <table className={`table-premium ${minWidthClass} ${tableClassName}`.trim()}>
+    <table className={`table-modern table-premium ${minWidthClass} ${tableClassName}`.trim()}>
       <colgroup>
         {columns.map((column) => (
           <col
@@ -93,7 +93,7 @@ export default function TablePremium({
   )
 
   return (
-    <div className={`table-shell ${className}`.trim()}>
+    <div className={`table-card table-shell ${className}`.trim()}>
       <div className={responsive ? 'table-scroll' : ''}>
         {content}
       </div>

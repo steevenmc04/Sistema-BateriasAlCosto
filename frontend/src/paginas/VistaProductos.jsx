@@ -59,20 +59,20 @@ const VistaProductos = ({ usuario }) => {
   const puedeEditar = tienePermiso(usuario, 'inventario_editar');
   const puedeEliminar = tienePermiso(usuario, 'inventario_eliminar');
   const columnasBaterias = useMemo(() => ([
-    { key: 'referencia', label: 'Referencia', width: '120px' },
+    { key: 'referencia', label: 'Referencia', width: '110px' },
     { key: 'producto', label: 'Marca · Caja · Descripción' },
-    { key: 'cantidad', label: 'Cantidad', width: '120px', align: 'center' },
-    { key: 'precio', label: 'Precio USD', width: '140px', align: 'right' },
-    { key: 'estado', label: 'Estado stock', width: '170px', align: 'center' },
-    { key: 'acciones', label: 'Acciones', width: '140px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'cantidad', label: 'Cantidad', width: '95px', align: 'center' },
+    { key: 'precio', label: 'Precio USD', width: '120px', align: 'right' },
+    { key: 'estado', label: 'Estado stock', width: '145px', align: 'center' },
+    { key: 'acciones', label: 'Acciones', width: '120px', align: 'center', cellClassName: 'table-action-cell' },
   ]), []);
 
   const columnasVarios = useMemo(() => ([
-    { key: 'referencia', label: 'Referencia', width: '120px' },
+    { key: 'referencia', label: 'Referencia', width: '110px' },
     { key: 'nombre', label: 'Nombre' },
-    { key: 'cantidad', label: 'Cantidad', width: '120px', align: 'center' },
-    { key: 'precio', label: 'Precio', width: '140px', align: 'right' },
-    { key: 'acciones', label: 'Acciones', width: '140px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'cantidad', label: 'Cantidad', width: '95px', align: 'center' },
+    { key: 'precio', label: 'Precio', width: '120px', align: 'right' },
+    { key: 'acciones', label: 'Acciones', width: '120px', align: 'center', cellClassName: 'table-action-cell' },
   ]), []);
 
   if (!tienePermiso(usuario, 'inventario_ver')) {
@@ -147,7 +147,7 @@ const VistaProductos = ({ usuario }) => {
               if (tab === 'baterias') {
                 if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
                 if (column.key === 'producto') return (
-                  <div className="max-w-[360px]">
+                  <div className="max-w-[340px]">
                     <div className="cell-main">{row.marca}</div>
                     <div className="cell-sub uppercase tracking-widest">{row.tipo_caja}</div>
                     <div className="cell-sub">{row.condicion}</div>
@@ -177,7 +177,7 @@ const VistaProductos = ({ usuario }) => {
 
               if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
               if (column.key === 'nombre') return (
-                <div className="max-w-[360px]">
+                <div className="max-w-[340px]">
                   <div className="cell-main">{row.nombre}</div>
                   <div className="cell-sub">{row.descripcion}</div>
                 </div>

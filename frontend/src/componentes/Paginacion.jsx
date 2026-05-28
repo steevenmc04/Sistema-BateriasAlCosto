@@ -17,7 +17,7 @@ const Paginacion = ({
   if (totalElementos === 0) return null;
 
   return (
-    <div className="pagination-premium text-xs text-text-primary">
+    <div className="pagination-modern pagination-premium text-text-primary">
       <div className="pagination-left">
         <span className="text-[10px] font-black uppercase tracking-widest">Mostrar</span>
         <div className="pagination-select">
