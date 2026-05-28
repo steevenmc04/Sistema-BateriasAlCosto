@@ -138,26 +138,51 @@ const VistaReportes = ({ usuario }) => {
 
         {/* DESKTOP TABLE */}
         <div className="hidden md:block table-premium">
-          <table className="min-w-full text-left text-[12px] text-text-muted table-fixed">
+          <div className="table-scroll">
+          <table className="min-w-[1100px] w-full text-left text-[12px] text-text-muted table-fixed">
             <thead className="bg-white/[0.02]">
               <tr>
                 {vp.tipo.startsWith('ventas') && ['Fecha','Tipo','Código','Cliente','Vendido por','Cant.','PVP Unit.','Costo','IVA?','Total'].map(t => (
-                  <th key={t} className={`table-header-cell ${['PVP Unit.','Costo','Total'].includes(t) ? 'money-header w-[140px]' : ''}`}>
+                  <th key={t} className={`table-header-cell ${
+                    t === 'Fecha' ? 'col-ref' :
+                    t === 'Cliente' ? 'col-cliente' :
+                    t === 'Cant.' ? 'col-cantidad' :
+                    ['PVP Unit.','Costo','Total'].includes(t) ? 'money-header col-money' :
+                    ''
+                  }`}>
                     {t}
                   </th>
                 ))}
                 {vp.tipo === 'compras' && ['Fecha','Marca','Caja','Cond','Cantidad','Total','Proveedor'].map(t => (
-                  <th key={t} className={`table-header-cell ${t === 'Total' ? 'money-header w-[140px]' : ''}`}>
+                  <th key={t} className={`table-header-cell ${
+                    t === 'Fecha' ? 'col-ref' :
+                    t === 'Cantidad' ? 'col-cantidad' :
+                    t === 'Proveedor' ? 'col-cliente' :
+                    t === 'Total' ? 'money-header col-money' :
+                    ''
+                  }`}>
                     {t}
                   </th>
                 ))}
                 {vp.tipo === 'chatarra' && ['Fecha','Operación','Caja','Cantidad','PU','Total','Contraparte'].map(t => (
-                  <th key={t} className={`table-header-cell ${['PU','Total'].includes(t) ? 'money-header w-[140px]' : ''}`}>
+                  <th key={t} className={`table-header-cell ${
+                    t === 'Fecha' ? 'col-ref' :
+                    t === 'Cantidad' ? 'col-cantidad' :
+                    t === 'Contraparte' ? 'col-cliente' :
+                    ['PU','Total'].includes(t) ? 'money-header col-money' :
+                    ''
+                  }`}>
                     {t}
                   </th>
                 ))}
                 {vp.tipo === 'inventario' && ['Clase','Ref','Marca','Caja','Cantidad','Costo Unit.','PVP Sugerido','Stock Valorizado','Estado'].map(t => (
-                  <th key={t} className={`table-header-cell ${['Costo Unit.','PVP Sugerido','Stock Valorizado'].includes(t) ? 'money-header w-[140px]' : ''}`}>
+                  <th key={t} className={`table-header-cell ${
+                    t === 'Ref' ? 'col-ref' :
+                    t === 'Cantidad' ? 'col-cantidad' :
+                    t === 'Estado' ? 'col-estado' :
+                    ['Costo Unit.','PVP Sugerido','Stock Valorizado'].includes(t) ? 'money-header col-money' :
+                    ''
+                  }`}>
                     {t}
                   </th>
                 ))}
@@ -172,7 +197,7 @@ const VistaReportes = ({ usuario }) => {
                     {vp.tipo.startsWith('ventas') && (
                       <>
                         <td className="table-body-cell">{formatearFecha(r.fecha)}</td>
-                        <td className="table-body-cell uppercase text-[11px] text-yellow-100">{r.tipo}</td>
+                        <td className="table-body-cell uppercase table-subtext text-yellow-100">{r.tipo}</td>
                         <td className="table-body-cell font-mono">{obtenerCodigoManual(r)}</td>
                         <td className="table-body-cell">{r.nombre_cliente}</td>
                         <td className="table-body-cell">{r.usuario_nombre || '-'}</td>
@@ -216,7 +241,7 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</span></td>
                         <td className="table-body-cell"><span className="money-cell">${(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2)}</span></td>
                         <td className="table-body-cell">
-                          <div className="flex items-center">
+                          <div className="action-cell">
                             <Badge cantidad={r.cantidad} size="sm">
                               {r.estado_stock === 'sin_stock' ? 'Sin stock' : r.cantidad <= 5 ? 'Stock bajo' : 'Con stock'}
                             </Badge>
@@ -229,6 +254,7 @@ const VistaReportes = ({ usuario }) => {
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* MOBILE CARDS */}

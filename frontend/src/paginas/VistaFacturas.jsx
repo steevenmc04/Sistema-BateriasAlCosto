@@ -117,15 +117,15 @@ const VistaFacturas = ({ usuario }) => {
 
       {/* DESKTOP TABLE */}
         <div className="hidden md:block table-premium">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-[12px] text-text-muted table-fixed">
+        <div className="table-scroll">
+          <table className="min-w-[980px] w-full text-left text-[12px] text-text-muted table-fixed">
             <thead className="bg-white/[0.02] text-[10px] font-black uppercase text-text-muted tracking-[0.2em]">
               <tr>
-                <th className="px-6 py-4 w-[180px]">Nº Factura · Fecha</th>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4 money-header w-[140px]">Total</th>
-                <th className="px-6 py-4 text-center w-[150px]">Estado</th>
-                <th className="px-6 py-4 text-center w-[180px]">Acciones</th>
+                <th className="table-header-cell col-ref">Nº Factura · Fecha</th>
+                <th className="table-header-cell col-cliente">Cliente</th>
+                <th className="table-header-cell money-header col-money">Total</th>
+                <th className="table-header-cell col-estado">Estado</th>
+                <th className="table-header-cell col-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2a2a2a]/20">
@@ -138,20 +138,20 @@ const VistaFacturas = ({ usuario }) => {
                   <tr key={f.id} className="transition-colors hover:bg-zinc-900/80 border-b border-border-default">
                     <td className="table-body-cell">
                       <div className="text-text-primary font-bold text-sm">{f.numero_factura}</div>
-                      <div className="text-[10px] text-text-muted">{new Date(f.fecha_emision).toLocaleDateString()}</div>
+                      <div className="table-subtext">{new Date(f.fecha_emision).toLocaleDateString()}</div>
                     </td>
                     <td className="table-body-cell">
                       <div className="text-text-primary text-sm truncate max-w-[200px]">{f.cliente_nombre}</div>
-                      <div className="text-[10px] text-text-muted truncate">{f.cliente_cedula_ruc || 'Consumidor Final'}</div>
+                      <div className="table-subtext truncate">{f.cliente_cedula_ruc || 'Consumidor Final'}</div>
                     </td>
                     <td className="table-body-cell"><span className="money-cell">${safeNumber(f.total).toFixed(2)}</span></td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="table-body-cell text-center">
                       <span className={`badge ${f.estado === 'emitida' ? 'badge-success' : 'badge-danger'}`}>{f.estado}</span>
                       {f.sri_estado === 'AUTORIZADA' && <span className="badge badge-success ml-1">SRI OK</span>}
                       {f.sri_estado === 'PENDIENTE' && <span className="badge badge-warning ml-1" title={f.sri_error}>SRI PEND</span>}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="table-body-cell">
+                      <div className="action-cell">
                         <button onClick={() => descargarPDF(f.id)} className="p-2 rounded-xl bg-black/50 border border-border-default text-text-muted hover:bg-zinc-900/80 hover:text-text-primary transition-colors" title="Descargar PDF"><Download size={16} /></button>
                         {f.estado === 'emitida' && puedeAnular && (
                            <button onClick={() => anularFactura(f.id)} className="p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 hover:text-error transition-all" title="Anular"><Trash2 size={16} /></button>
@@ -170,9 +170,7 @@ const VistaFacturas = ({ usuario }) => {
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t border-border-default">
-          <Paginacion paginaActual={paginaActual} totalPaginas={totalPaginas} totalElementos={totalElementos} elementosPorPagina={elementosPorPagina} setPaginaActual={setPaginaActual} setElementosPorPagina={setElementosPorPagina} />
-        </div>
+        <Paginacion paginaActual={paginaActual} totalPaginas={totalPaginas} totalElementos={totalElementos} elementosPorPagina={elementosPorPagina} setPaginaActual={setPaginaActual} setElementosPorPagina={setElementosPorPagina} />
       </div>
 
       {/* MOBILE CARDS */}

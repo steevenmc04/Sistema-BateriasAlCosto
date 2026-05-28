@@ -140,21 +140,22 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
           <>
             <td className="table-body-cell">
               <div className="text-text-primary font-bold text-sm">{formatearFecha(item.creado_en)}</div>
-              <div className="text-[10px] text-yellow-100 font-black">{item.producto_codigo || ''}</div>
+              <div className="table-subtext text-yellow-100 font-black">{item.producto_codigo || ''}</div>
             </td>
             <td className="table-body-cell">
               <div className="text-text-primary text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
-               <div className="text-[9px] text-text-muted uppercase">{item.producto_condicion || ''}</div>
+               <div className="table-subtext uppercase">{item.producto_condicion || ''}</div>
             </td>
             <td className="table-body-cell">
               <div className="text-text-primary text-sm">{item.cliente_nombre || 'Consumidor Final'}</div>
-               <div className="text-[9px] text-text-muted">{item.cliente_documento || ''}</div>
+               <div className="table-subtext">{item.cliente_documento || ''}</div>
             </td>
             <td className="table-body-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
             <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
             <td className="table-body-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
             <td className="table-body-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
-            <td className="table-body-cell text-center">
+            <td className="table-body-cell">
+              <div className="action-cell">
                 {tienePermiso(usuario, 'facturacion_emitir') && (
                 <button onClick={() => navigate('/facturacion', { state: { nuevaFacturaVenta: {
                   id: item.id, venta_id: item.id, cliente_nombre: item.cliente_nombre || '',
@@ -165,6 +166,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                   items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, item.producto_codigo].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total)/Number(item.cantidad_total) : 0), descuento: 0 }],
                 }}})} className="p-2 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors" title="Emitir factura"><FileText size={16} /></button>
               )}
+              </div>
             </td>
           </>
         ) : tabType === 'compra' ? (
@@ -172,15 +174,13 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             <td className="table-body-cell text-text-primary font-bold text-sm">{formatearFecha(item.creado_en)}</td>
             <td className="table-body-cell">
               <div className="text-text-primary text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
-              <div className="text-[9px] text-text-muted uppercase">{item.producto_condicion || ''}</div>
+              <div className="table-subtext uppercase">{item.producto_condicion || ''}</div>
             </td>
             <td className="table-body-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
             <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
             <td className="table-body-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
             <td className="table-body-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
-            <td className="table-body-cell text-center">
-              <button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="p-2 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors" title="Copiar factura"><FileText size={16} /></button>
-            </td>
+            <td className="table-body-cell"><div className="action-cell"><button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="p-2 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors" title="Copiar factura"><FileText size={16} /></button></div></td>
           </>
         ) : (
           <>
@@ -190,7 +190,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             </td>
             <td className="table-body-cell">
               <div className="text-white text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
-              <div className="text-[9px] text-text-muted">{item.notas || ''}</div>
+              <div className="table-subtext">{item.notas || ''}</div>
             </td>
             <td className="table-body-cell text-center font-black text-white">{item.cantidad_total || '-'}</td>
             <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
@@ -299,17 +299,17 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
 
       <ErrorPanel />
 
-      <div className="bg-zinc-900/50 border border-border-default rounded-xl overflow-hidden backdrop-blur-xl">
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse table-fixed">
+      <div className="table-premium bg-zinc-900/50 backdrop-blur-xl">
+        <div className="hidden md:block table-scroll">
+          <table className="w-full text-left border-collapse table-fixed min-w-[980px]">
             <thead>
               <tr className="border-b border-border-default text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">
                 {h.tab === 'venta' ? (
-                  <><th className="table-header-cell w-[120px]">Fecha</th><th className="table-header-cell">Producto</th><th className="table-header-cell">Cliente</th><th className="table-header-cell text-center w-[100px]">Cant.</th><th className="table-header-cell text-center w-[100px]">Items</th><th className="table-header-cell money-header w-[140px]">Total</th><th className="table-header-cell text-right w-[140px]">Vendedor</th><th className="table-header-cell text-center w-[140px]">Acciones</th></>
+                  <><th className="table-header-cell col-ref">Fecha</th><th className="table-header-cell col-producto">Producto</th><th className="table-header-cell col-cliente">Cliente</th><th className="table-header-cell col-cantidad">Cant.</th><th className="table-header-cell col-items">Items</th><th className="table-header-cell money-header col-money">Total</th><th className="table-header-cell col-money">Vendedor</th><th className="table-header-cell col-acciones">Acciones</th></>
                 ) : h.tab === 'compra' ? (
-                  <><th className="table-header-cell w-[120px]">Fecha</th><th className="table-header-cell">Producto</th><th className="table-header-cell text-center w-[100px]">Cant.</th><th className="table-header-cell text-center w-[100px]">Items</th><th className="table-header-cell money-header w-[140px]">Total</th><th className="table-header-cell text-right w-[140px]">Usuario</th><th className="table-header-cell text-center w-[140px]">Acciones</th></>
+                  <><th className="table-header-cell col-ref">Fecha</th><th className="table-header-cell col-producto">Producto</th><th className="table-header-cell col-cantidad">Cant.</th><th className="table-header-cell col-items">Items</th><th className="table-header-cell money-header col-money">Total</th><th className="table-header-cell col-money">Usuario</th><th className="table-header-cell col-acciones">Acciones</th></>
                 ) : (
-                  <><th className="table-header-cell w-[120px]">Fecha</th><th className="table-header-cell text-center w-[120px]">Tipo</th><th className="table-header-cell">Producto</th><th className="table-header-cell text-center w-[100px]">Cant.</th><th className="table-header-cell text-center w-[100px]">Items</th><th className="table-header-cell money-header w-[140px]">Total</th><th className="table-header-cell text-right w-[140px]">Usuario</th></>
+                  <><th className="table-header-cell col-ref">Fecha</th><th className="table-header-cell col-ref text-center">Tipo</th><th className="table-header-cell col-producto">Producto</th><th className="table-header-cell col-cantidad">Cant.</th><th className="table-header-cell col-items">Items</th><th className="table-header-cell money-header col-money">Total</th><th className="table-header-cell col-money">Usuario</th></>
                 )}
               </tr>
             </thead>
@@ -320,9 +320,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
               )}
             </tbody>
           </table>
-          <div className="p-4 border-t border-border-default">
-            <Paginacion paginaActual={paginaActual} totalPaginas={totalPaginas} totalElementos={totalElementos} elementosPorPagina={elementosPorPagina} setPaginaActual={setPaginaActual} setElementosPorPagina={setElementosPorPagina} />
-          </div>
+          <Paginacion paginaActual={paginaActual} totalPaginas={totalPaginas} totalElementos={totalElementos} elementosPorPagina={elementosPorPagina} setPaginaActual={setPaginaActual} setElementosPorPagina={setElementosPorPagina} />
         </div>
         <div className="md:hidden p-4 space-y-4">
           {h.cargando ? (

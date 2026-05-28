@@ -163,37 +163,57 @@
   }
 
   .table-premium {
-    @apply w-full overflow-x-auto min-w-0;
+    width: 100%;
+    background: #0A0A0A;
+    border: 1px solid rgba(227,198,106,0.18);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
   }
+  .table-scroll > table,
+  .table-premium > table,
   .table-premium table {
-    @apply w-full border-collapse;
-  }
-  .table-premium thead tr {
-    @apply border-b;
-    border-color: var(--border-default);
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
   }
   .table-premium thead th {
-    @apply px-4 md:px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap text-left;
-    color: var(--text-zinc-300);
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
-    position: sticky; top: 0; z-index: 20;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
+    height: 54px;
+    padding: 0 18px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #E3C66A;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(227,198,106,0.12);
+    background: #0F0F0F;
+    white-space: nowrap;
     vertical-align: middle;
+    text-align: left;
   }
   .table-premium tbody tr {
-    @apply transition-colors duration-150;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
+    height: 72px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.2s ease;
   }
   .table-premium tbody tr:hover {
-    background: rgba(245,179,1,0.03);
-  }
-  .table-premium tbody tr:nth-child(even) { background: rgba(255,255,255,0.01); }
-  .table-premium tbody tr:last-child {
-    @apply border-b-0;
+    background: rgba(255,255,255,0.02);
   }
   .table-premium tbody td {
-    @apply px-4 md:px-6 py-3 align-middle;
+    padding: 14px 18px;
+    vertical-align: middle;
+    color: #F2EFE6;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .table-premium tbody tr:last-child {
+    border-bottom: 0;
   }
 
   .search-input {
@@ -332,11 +352,41 @@
   }
 
   .table-header-cell {
-    @apply px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-[0.2em] whitespace-nowrap text-left leading-tight;
+    height: 54px;
+    padding: 0 18px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #E3C66A;
+    font-weight: 700;
+    vertical-align: middle;
+    white-space: nowrap;
+    text-align: left;
   }
   .table-body-cell {
-    @apply px-6 py-4 text-sm leading-tight;
+    padding: 14px 18px;
+    font-size: 14px;
+    line-height: 1.25;
+    vertical-align: middle;
+    color: #F2EFE6;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+
+  .table-subtext {
+    font-size: 11px;
+    color: #B8B8B8;
+    margin-top: 2px;
+  }
+
+  .col-ref { width: 120px; }
+  .col-producto { width: 260px; }
+  .col-cliente { width: 220px; }
+  .col-cantidad { width: 90px; text-align: center; }
+  .col-items { width: 80px; text-align: center; }
+  .col-money { width: 140px; text-align: right; }
+  .col-estado { width: 160px; text-align: center; }
+  .col-acciones { width: 120px; text-align: center; }
 
   /* Text tokens */
   .text-text-muted { color: var(--text-muted) !important; }
@@ -356,6 +406,7 @@
     font-feature-settings: "tnum";
     font-weight: 700;
     color: #00E676;
+    line-height: 1;
     white-space: nowrap;
   }
 
@@ -370,6 +421,36 @@
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     white-space: nowrap;
+  }
+
+  .action-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .pagination-premium {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 18px 24px;
+    border-top: 1px solid rgba(227,198,106,0.12);
+    flex-wrap: wrap;
+  }
+
+  .pagination-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+  }
+
+  .pagination-select {
+    width: 96px;
+    min-width: 96px;
   }
 
   /* Accent utilities */
@@ -430,6 +511,19 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 @media (max-width: 640px) {
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .hide-scrollbar::-webkit-scrollbar { display: none; }
+}
+
+@media (max-width: 1024px) {
+  .table-premium thead th,
+  .table-header-cell {
+    padding: 0 14px;
+    font-size: 10px;
+  }
+  .table-premium tbody td,
+  .table-body-cell {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
 }
 
 /* End of component styles */

@@ -38,23 +38,24 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
         )}
       </div>
 
-      <div className="overflow-x-auto hide-scrollbar bg-black/60 border border-border-default rounded-xl">
-        <table className="w-full text-left border-collapse min-w-[680px]">
+      <div className="table-premium">
+        <div className="table-scroll hide-scrollbar">
+        <table className="w-full text-left border-collapse min-w-[860px] table-fixed">
           <thead>
-            <tr className="border-b border-border-default text-[9px] font-black text-text-muted uppercase tracking-widest">
-              <th className="pb-2 pr-2 w-[200px]">Producto</th>
-              <th className="pb-2 pr-2 w-[100px]">Marca</th>
-              <th className="pb-2 pr-2 w-[70px] text-center">Cant</th>
-              <th className="pb-2 pr-2 w-[90px] text-right">Precio</th>
-              <th className="pb-2 pr-2 w-[70px] text-right">Dscto</th>
-              <th className="pb-2 pr-2 w-[90px] text-right">Subtotal</th>
-              {!soloLectura && <th className="pb-2 w-10"></th>}
+            <tr>
+              <th className="table-header-cell col-producto">Producto</th>
+              <th className="table-header-cell col-ref">Marca</th>
+              <th className="table-header-cell col-cantidad">Cant</th>
+              <th className="table-header-cell col-money">Precio</th>
+              <th className="table-header-cell col-money">Dscto</th>
+              <th className="table-header-cell col-money">Subtotal</th>
+              {!soloLectura && <th className="table-header-cell col-acciones"></th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#121212]/20">
+          <tbody>
             {items.map((item, idx) => (
               <tr key={item.id} className="transition-colors hover:bg-zinc-900/80 border-b border-border-default">
-                <td className="py-2 pr-2 relative">
+                <td className="table-body-cell relative">
                   {soloLectura ? (
                     <div className="text-xs text-white font-medium">
                       {item.nombre || item.codigo || ''}
@@ -103,7 +104,7 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                     </div>
                   )}
                 </td>
-                <td className="py-2 pr-2">
+                <td className="table-body-cell">
                   {soloLectura ? (
                     <span className="text-xs text-text-muted">{item.marca || ''}</span>
                   ) : (
@@ -111,7 +112,7 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                       placeholder="Marca" className="input-premium text-xs" />
                   )}
                 </td>
-                <td className="py-2 pr-2">
+                <td className="table-body-cell">
                   {soloLectura ? (
                     <span className="text-xs text-white font-black block text-center">{item.cantidad}</span>
                   ) : (
@@ -121,7 +122,7 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                       className="input-premium text-xs text-center" />
                   )}
                 </td>
-                <td className="py-2 pr-2">
+                <td className="table-body-cell">
                   {soloLectura ? (
                     <span className="text-xs text-yellow-100 font-bold block text-right">${safeNumber(item.precio_unitario).toFixed(2)}</span>
                   ) : (
@@ -130,7 +131,7 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                       className="input-premium text-xs text-right" />
                   )}
                 </td>
-                <td className="py-2 pr-2">
+                <td className="table-body-cell">
                   {soloLectura ? (
                     <span className="text-xs text-error block text-right">{safeNumber(item.descuento) > 0 ? `-$${safeNumber(item.descuento).toFixed(2)}` : '-'}</span>
                   ) : (
@@ -139,22 +140,25 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                       className="input-premium text-xs text-right" />
                   )}
                 </td>
-                <td className="py-2 pr-2 text-right text-xs text-white font-medium">
-                  ${((safeNumber(item.cantidad) * safeNumber(item.precio_unitario)) * (1 - safeNumber(item.descuento) / 100)).toFixed(2)}
+                <td className="table-body-cell">
+                  <span className="money-cell">${((safeNumber(item.cantidad) * safeNumber(item.precio_unitario)) * (1 - safeNumber(item.descuento) / 100)).toFixed(2)}</span>
                 </td>
                 {!soloLectura && (
-                  <td className="py-2 text-center">
+                  <td className="table-body-cell">
+                    <div className="action-cell">
                     <button type="button" onClick={() => onEliminarItem(idx)}
                       className="p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-30"
                       disabled={items.length === 1}>
                       <Trash2 size={14} />
                     </button>
+                    </div>
                   </td>
                 )}
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
