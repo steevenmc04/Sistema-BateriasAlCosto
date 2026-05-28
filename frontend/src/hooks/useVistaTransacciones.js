@@ -180,8 +180,7 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
       } else {
         art.producto_id = Number(it.producto_id);
       }
-      const codigoManual = it.codigo_manual ?? it.codigoManual;
-      if (codigoManual) art.codigo_manual = codigoManual;
+      if (it.codigo_manual) art.codigo_manual = it.codigo_manual;
       if (it.customMarca && !esCustom) art.marca_custom = it.customMarca;
       if (it.customTipoCaja && !esCustom) art.tipo_caja_custom = it.customTipoCaja;
       return art;

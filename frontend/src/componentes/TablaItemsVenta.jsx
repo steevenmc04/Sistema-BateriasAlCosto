@@ -3,7 +3,7 @@ import { Trash2, Search, X } from 'lucide-react';
 import Badge from './Badge.jsx';
 import SelectPremium from './SelectPremium.jsx';
 import { safeNumber } from '../utilidades/safeNumber.js';
-import { esProductoBateria } from '../utilidades/esProductoBateria.js';
+import { esBateria } from '../utilidades/esProductoBateria.js';
 
 const Field = ({ label, className = '', children }) => (
   <div className={`pos-field ${className}`}>
@@ -39,8 +39,9 @@ function BuscadorInline({ productos, valorInicial, onSelect, onChange, mode }) {
   const filtered = useMemo(() => {
     const q = text.trim().toLowerCase();
     let base = productos || [];
-    if (mode === 'varios') base = base.filter((p) => !esProductoBateria(p));
-    if (mode === 'bateria') base = base.filter((p) => esProductoBateria(p));
+    const esBateriaProducto = (p) => esBateria(p);
+    if (mode === 'varios') base = base.filter((p) => !esBateriaProducto(p));
+    if (mode === 'bateria') base = base.filter((p) => esBateriaProducto(p));
     if (!q) return base.slice(0, 10);
     return base.filter((p) =>
       (p.nombre || '').toLowerCase().includes(q) ||
@@ -104,8 +105,9 @@ export default function TablaItemsVenta({
 }) {
   const isVenta = tipoModal === 'venta';
   const isCompra = tipoModal === 'compra';
-  const productosBateria = useMemo(() => (productos || []).filter((p) => esProductoBateria(p)), [productos]);
-  const productosVarios = useMemo(() => (productos || []).filter((p) => !esProductoBateria(p)), [productos]);
+
+  const productosBateria = useMemo(() => (productos || []).filter((p) => esBateria(p)), [productos]);
+  const productosVarios = useMemo(() => (productos || []).filter((p) => !esBateria(p)), [productos]);
 
   const getBateriaMatch = (marca, tipoCaja) => {
     if (!marca || !tipoCaja) return null;
@@ -147,9 +149,8 @@ export default function TablaItemsVenta({
     onActualizarCampo(index, 'stock_disponible', stock);
     onActualizarCampo(index, 'precio_actual', String(precio));
 
-    // Solo completar código cuando está vacío para no romper la escritura manual.
     const actual = items[index];
-    const codigoActual = actual?.codigo_manual ?? actual?.codigoManual ?? '';
+    const codigoActual = actual?.codigo_manual ?? '';
     if (!codigoActual) {
       const codigoInventario = getCodigo(match);
       if (codigoInventario) onActualizarCampo(index, 'codigo_manual', codigoInventario);
@@ -175,7 +176,7 @@ export default function TablaItemsVenta({
 
     return (
       <div
-        key={item.uid || item.id}
+        key={item.uid}
         className="relative overflow-visible border-b border-border-default/40 py-4 px-3 md:px-4 last:border-b-0 rounded-xl bg-zinc-950/30"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_minmax(180px,1fr)_140px] gap-3 items-end">
@@ -244,7 +245,7 @@ export default function TablaItemsVenta({
             <Field label="Código manual" className="xl:min-w-[240px]">
               <input
                 type="text"
-                value={item.codigo_manual ?? item.codigoManual ?? ''}
+                value={item.codigo_manual ?? ''}
                 onChange={(e) => onActualizarCampo(index, 'codigo_manual', e.target.value)}
                 placeholder="Ingrese el código manual"
                 data-no-submit-enter="true"
@@ -304,7 +305,7 @@ export default function TablaItemsVenta({
 
     return (
       <div
-        key={item.uid || item.id}
+        key={item.uid}
         className="relative overflow-visible border-b border-border-default/40 py-4 px-3 md:px-4 last:border-b-0 rounded-xl bg-zinc-950/30"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_minmax(180px,1fr)_140px] gap-3 items-end">
