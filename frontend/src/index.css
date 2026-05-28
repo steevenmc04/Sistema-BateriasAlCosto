@@ -164,8 +164,10 @@
 
   .table-premium {
     width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
     background: #0A0A0A;
-    border: 1px solid rgba(227,198,106,0.18);
+    border: 1px solid rgba(227,198,106,0.16);
     border-radius: 18px;
     overflow: hidden;
   }
@@ -176,6 +178,7 @@
     -webkit-overflow-scrolling: touch;
   }
   .table-scroll > table,
+  table.table-premium,
   .table-premium > table,
   .table-premium table {
     width: 100%;
@@ -183,29 +186,29 @@
     table-layout: fixed;
   }
   .table-premium thead th {
-    height: 54px;
-    padding: 0 18px;
+    height: 56px;
+    padding: 0 20px;
     font-size: 11px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: #E3C66A;
     font-weight: 700;
     border-bottom: 1px solid rgba(227,198,106,0.12);
-    background: #0F0F0F;
+    background: #101010;
     white-space: nowrap;
     vertical-align: middle;
     text-align: left;
   }
   .table-premium tbody tr {
-    height: 72px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    height: 78px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     transition: background 0.2s ease;
   }
   .table-premium tbody tr:hover {
     background: rgba(255,255,255,0.02);
   }
   .table-premium tbody td {
-    padding: 14px 18px;
+    padding: 14px 20px;
     vertical-align: middle;
     color: #F2EFE6;
     font-size: 14px;
@@ -352,8 +355,8 @@
   }
 
   .table-header-cell {
-    height: 54px;
-    padding: 0 18px;
+    height: 56px;
+    padding: 0 20px;
     font-size: 11px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -363,8 +366,9 @@
     white-space: nowrap;
     text-align: left;
   }
-  .table-body-cell {
-    padding: 14px 18px;
+  .table-body-cell,
+  .table-cell {
+    padding: 14px 20px;
     font-size: 14px;
     line-height: 1.25;
     vertical-align: middle;
@@ -379,9 +383,19 @@
     margin-top: 2px;
   }
 
+  .reference-col { width: 120px; }
+  .product-col { width: 260px; }
+  .client-col { width: 240px; }
+  .quantity-col { width: 90px; text-align: center; }
+  .items-col { width: 80px; text-align: center; }
+  .money-col { width: 140px; text-align: right; }
+  .status-col { width: 160px; text-align: center; }
+  .actions-col { width: 120px; text-align: center; }
+
+  /* aliases to preserve existing markup while migrating */
   .col-ref { width: 120px; }
   .col-producto { width: 260px; }
-  .col-cliente { width: 220px; }
+  .col-cliente { width: 240px; }
   .col-cantidad { width: 90px; text-align: center; }
   .col-items { width: 80px; text-align: center; }
   .col-money { width: 140px; text-align: right; }
@@ -399,9 +413,10 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    min-width: 120px;
     width: 100%;
+    min-width: 120px;
     text-align: right;
+    font-size: 20px;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     font-weight: 700;
@@ -433,9 +448,9 @@
 
   .pagination-premium {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 20px;
+    justify-content: space-between;
+    gap: 24px;
     padding: 18px 24px;
     border-top: 1px solid rgba(227,198,106,0.12);
     flex-wrap: wrap;
@@ -451,6 +466,7 @@
   .pagination-select {
     width: 96px;
     min-width: 96px;
+    height: 48px;
   }
 
   /* Accent utilities */
@@ -516,12 +532,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 @media (max-width: 1024px) {
   .table-premium thead th,
   .table-header-cell {
-    padding: 0 14px;
+    padding: 0 16px;
     font-size: 10px;
   }
   .table-premium tbody td,
-  .table-body-cell {
-    padding: 12px 14px;
+  .table-body-cell,
+  .table-cell {
+    padding: 12px 16px;
     font-size: 13px;
   }
 }

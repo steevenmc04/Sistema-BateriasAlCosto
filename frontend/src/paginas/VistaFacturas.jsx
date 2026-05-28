@@ -121,36 +121,36 @@ const VistaFacturas = ({ usuario }) => {
           <table className="min-w-[980px] w-full text-left text-[12px] text-text-muted table-fixed">
             <thead className="bg-white/[0.02] text-[10px] font-black uppercase text-text-muted tracking-[0.2em]">
               <tr>
-                <th className="table-header-cell col-ref">Nº Factura · Fecha</th>
-                <th className="table-header-cell col-cliente">Cliente</th>
-                <th className="table-header-cell money-header col-money">Total</th>
-                <th className="table-header-cell col-estado">Estado</th>
-                <th className="table-header-cell col-acciones">Acciones</th>
+                <th className="table-header-cell reference-col">Nº Factura · Fecha</th>
+                <th className="table-header-cell client-col">Cliente</th>
+                <th className="table-header-cell money-header money-col">Total</th>
+                <th className="table-header-cell status-col">Estado</th>
+                <th className="table-header-cell actions-col">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2a2a2a]/20">
+            <tbody>
               {cargando ? (
-                <tr><td colSpan={5} className="px-6 py-20 text-center text-text-muted text-[10px] font-black uppercase tracking-widest">Cargando facturas...</td></tr>
+                <tr><td colSpan={5} className="table-cell text-center text-text-muted text-[10px] font-black uppercase tracking-widest">Cargando facturas...</td></tr>
                 ) : itemsPaginados.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-20 text-center text-text-muted text-[10px] font-black uppercase tracking-widest">No se encontraron facturas.</td></tr>
+                <tr><td colSpan={5} className="table-cell text-center text-text-muted text-[10px] font-black uppercase tracking-widest">No se encontraron facturas.</td></tr>
               ) : (
                 itemsPaginados.map((f) => (
                   <tr key={f.id} className="transition-colors hover:bg-zinc-900/80 border-b border-border-default">
-                    <td className="table-body-cell">
+                    <td className="table-cell">
                       <div className="text-text-primary font-bold text-sm">{f.numero_factura}</div>
                       <div className="table-subtext">{new Date(f.fecha_emision).toLocaleDateString()}</div>
                     </td>
-                    <td className="table-body-cell">
+                    <td className="table-cell">
                       <div className="text-text-primary text-sm truncate max-w-[200px]">{f.cliente_nombre}</div>
                       <div className="table-subtext truncate">{f.cliente_cedula_ruc || 'Consumidor Final'}</div>
                     </td>
-                    <td className="table-body-cell"><span className="money-cell">${safeNumber(f.total).toFixed(2)}</span></td>
-                    <td className="table-body-cell text-center">
+                    <td className="table-cell"><span className="money-cell">${safeNumber(f.total).toFixed(2)}</span></td>
+                    <td className="table-cell text-center">
                       <span className={`badge ${f.estado === 'emitida' ? 'badge-success' : 'badge-danger'}`}>{f.estado}</span>
                       {f.sri_estado === 'AUTORIZADA' && <span className="badge badge-success ml-1">SRI OK</span>}
                       {f.sri_estado === 'PENDIENTE' && <span className="badge badge-warning ml-1" title={f.sri_error}>SRI PEND</span>}
                     </td>
-                    <td className="table-body-cell">
+                    <td className="table-cell">
                       <div className="action-cell">
                         <button onClick={() => descargarPDF(f.id)} className="p-2 rounded-xl bg-black/50 border border-border-default text-text-muted hover:bg-zinc-900/80 hover:text-text-primary transition-colors" title="Descargar PDF"><Download size={16} /></button>
                         {f.estado === 'emitida' && puedeAnular && (

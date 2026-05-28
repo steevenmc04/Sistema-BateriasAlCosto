@@ -40,7 +40,7 @@ const Paginacion = ({
         <button
           onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
           disabled={paginaActual === 1}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-950 border border-border-default hover:bg-yellow-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-text-primary"
+          className="w-12 h-12 flex items-center justify-center rounded-xl bg-zinc-950 border border-border-default hover:bg-yellow-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-text-primary"
           title="Página Anterior"
         >
           <ChevronLeft size={15} />
@@ -53,7 +53,7 @@ const Paginacion = ({
         <button
           onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
           disabled={paginaActual === totalPaginas}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-950 border border-border-default hover:bg-yellow-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-text-primary"
+          className="w-12 h-12 flex items-center justify-center rounded-xl bg-zinc-950 border border-border-default hover:bg-yellow-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-text-primary"
           title="Página Siguiente"
         >
           <ChevronRight size={15} />

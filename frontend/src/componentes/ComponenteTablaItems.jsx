@@ -43,19 +43,19 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
         <table className="w-full text-left border-collapse min-w-[860px] table-fixed">
           <thead>
             <tr>
-              <th className="table-header-cell col-producto">Producto</th>
-              <th className="table-header-cell col-ref">Marca</th>
-              <th className="table-header-cell col-cantidad">Cant</th>
-              <th className="table-header-cell col-money">Precio</th>
-              <th className="table-header-cell col-money">Dscto</th>
-              <th className="table-header-cell col-money">Subtotal</th>
-              {!soloLectura && <th className="table-header-cell col-acciones"></th>}
+              <th className="table-header-cell product-col">Producto</th>
+              <th className="table-header-cell reference-col">Marca</th>
+              <th className="table-header-cell quantity-col">Cant</th>
+              <th className="table-header-cell money-col">Precio</th>
+              <th className="table-header-cell money-col">Dscto</th>
+              <th className="table-header-cell money-col">Subtotal</th>
+              {!soloLectura && <th className="table-header-cell actions-col"></th>}
             </tr>
           </thead>
           <tbody>
             {items.map((item, idx) => (
               <tr key={item.id} className="transition-colors hover:bg-zinc-900/80 border-b border-border-default">
-                <td className="table-body-cell relative">
+                <td className="table-cell relative">
                   {soloLectura ? (
                     <div className="text-xs text-white font-medium">
                       {item.nombre || item.codigo || ''}
@@ -104,7 +104,7 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                     </div>
                   )}
                 </td>
-                <td className="table-body-cell">
+                <td className="table-cell">
                   {soloLectura ? (
                     <span className="text-xs text-text-muted">{item.marca || ''}</span>
                   ) : (
@@ -112,7 +112,7 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                       placeholder="Marca" className="input-premium text-xs" />
                   )}
                 </td>
-                <td className="table-body-cell">
+                <td className="table-cell">
                   {soloLectura ? (
                     <span className="text-xs text-white font-black block text-center">{item.cantidad}</span>
                   ) : (
@@ -122,7 +122,7 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                       className="input-premium text-xs text-center" />
                   )}
                 </td>
-                <td className="table-body-cell">
+                <td className="table-cell">
                   {soloLectura ? (
                     <span className="text-xs text-yellow-100 font-bold block text-right">${safeNumber(item.precio_unitario).toFixed(2)}</span>
                   ) : (
@@ -131,7 +131,7 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                       className="input-premium text-xs text-right" />
                   )}
                 </td>
-                <td className="table-body-cell">
+                <td className="table-cell">
                   {soloLectura ? (
                     <span className="text-xs text-error block text-right">{safeNumber(item.descuento) > 0 ? `-$${safeNumber(item.descuento).toFixed(2)}` : '-'}</span>
                   ) : (
@@ -140,11 +140,11 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
                       className="input-premium text-xs text-right" />
                   )}
                 </td>
-                <td className="table-body-cell">
+                <td className="table-cell">
                   <span className="money-cell">${((safeNumber(item.cantidad) * safeNumber(item.precio_unitario)) * (1 - safeNumber(item.descuento) / 100)).toFixed(2)}</span>
                 </td>
                 {!soloLectura && (
-                  <td className="table-body-cell">
+                  <td className="table-cell">
                     <div className="action-cell">
                     <button type="button" onClick={() => onEliminarItem(idx)}
                       className="p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-30"

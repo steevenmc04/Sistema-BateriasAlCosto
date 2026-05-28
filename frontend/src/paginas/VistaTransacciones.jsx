@@ -138,23 +138,23 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
       <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
         {tabType === 'venta' ? (
           <>
-            <td className="table-body-cell">
+            <td className="table-cell">
               <div className="text-text-primary font-bold text-sm">{formatearFecha(item.creado_en)}</div>
               <div className="table-subtext text-yellow-100 font-black">{item.producto_codigo || ''}</div>
             </td>
-            <td className="table-body-cell">
+            <td className="table-cell">
               <div className="text-text-primary text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
                <div className="table-subtext uppercase">{item.producto_condicion || ''}</div>
             </td>
-            <td className="table-body-cell">
+            <td className="table-cell">
               <div className="text-text-primary text-sm">{item.cliente_nombre || 'Consumidor Final'}</div>
                <div className="table-subtext">{item.cliente_documento || ''}</div>
             </td>
-            <td className="table-body-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
-            <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-body-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
-            <td className="table-body-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
-            <td className="table-body-cell">
+            <td className="table-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
+            <td className="table-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
+            <td className="table-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
+            <td className="table-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
+            <td className="table-cell">
               <div className="action-cell">
                 {tienePermiso(usuario, 'facturacion_emitir') && (
                 <button onClick={() => navigate('/facturacion', { state: { nuevaFacturaVenta: {
@@ -171,31 +171,31 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
           </>
         ) : tabType === 'compra' ? (
           <>
-            <td className="table-body-cell text-text-primary font-bold text-sm">{formatearFecha(item.creado_en)}</td>
-            <td className="table-body-cell">
+            <td className="table-cell text-text-primary font-bold text-sm">{formatearFecha(item.creado_en)}</td>
+            <td className="table-cell">
               <div className="text-text-primary text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
               <div className="table-subtext uppercase">{item.producto_condicion || ''}</div>
             </td>
-            <td className="table-body-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
-            <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-body-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
-            <td className="table-body-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
-            <td className="table-body-cell"><div className="action-cell"><button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="p-2 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors" title="Copiar factura"><FileText size={16} /></button></div></td>
+            <td className="table-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
+            <td className="table-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
+            <td className="table-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
+            <td className="table-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
+            <td className="table-cell"><div className="action-cell"><button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="p-2 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors" title="Copiar factura"><FileText size={16} /></button></div></td>
           </>
         ) : (
           <>
-            <td className="table-body-cell text-white font-bold text-sm">{formatearFecha(item.creado_en)}</td>
-            <td className="table-body-cell text-center">
+            <td className="table-cell text-white font-bold text-sm">{formatearFecha(item.creado_en)}</td>
+            <td className="table-cell text-center">
               <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${item.tipo_operacion === 'salida' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>{item.tipo_operacion}</span>
             </td>
-            <td className="table-body-cell">
+            <td className="table-cell">
               <div className="text-white text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
               <div className="table-subtext">{item.notas || ''}</div>
             </td>
-            <td className="table-body-cell text-center font-black text-white">{item.cantidad_total || '-'}</td>
-            <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-body-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
-            <td className="table-body-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
+            <td className="table-cell text-center font-black text-white">{item.cantidad_total || '-'}</td>
+            <td className="table-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
+            <td className="table-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
+            <td className="table-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
           </>
         )}
       </tr>
@@ -305,15 +305,15 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             <thead>
               <tr className="border-b border-border-default text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">
                 {h.tab === 'venta' ? (
-                  <><th className="table-header-cell col-ref">Fecha</th><th className="table-header-cell col-producto">Producto</th><th className="table-header-cell col-cliente">Cliente</th><th className="table-header-cell col-cantidad">Cant.</th><th className="table-header-cell col-items">Items</th><th className="table-header-cell money-header col-money">Total</th><th className="table-header-cell col-money">Vendedor</th><th className="table-header-cell col-acciones">Acciones</th></>
+                  <><th className="table-header-cell reference-col">Fecha</th><th className="table-header-cell product-col">Producto</th><th className="table-header-cell client-col">Cliente</th><th className="table-header-cell quantity-col">Cant.</th><th className="table-header-cell items-col">Items</th><th className="table-header-cell money-header money-col">Total</th><th className="table-header-cell money-col">Vendedor</th><th className="table-header-cell actions-col">Acciones</th></>
                 ) : h.tab === 'compra' ? (
-                  <><th className="table-header-cell col-ref">Fecha</th><th className="table-header-cell col-producto">Producto</th><th className="table-header-cell col-cantidad">Cant.</th><th className="table-header-cell col-items">Items</th><th className="table-header-cell money-header col-money">Total</th><th className="table-header-cell col-money">Usuario</th><th className="table-header-cell col-acciones">Acciones</th></>
+                  <><th className="table-header-cell reference-col">Fecha</th><th className="table-header-cell product-col">Producto</th><th className="table-header-cell quantity-col">Cant.</th><th className="table-header-cell items-col">Items</th><th className="table-header-cell money-header money-col">Total</th><th className="table-header-cell money-col">Usuario</th><th className="table-header-cell actions-col">Acciones</th></>
                 ) : (
-                  <><th className="table-header-cell col-ref">Fecha</th><th className="table-header-cell col-ref text-center">Tipo</th><th className="table-header-cell col-producto">Producto</th><th className="table-header-cell col-cantidad">Cant.</th><th className="table-header-cell col-items">Items</th><th className="table-header-cell money-header col-money">Total</th><th className="table-header-cell col-money">Usuario</th></>
+                  <><th className="table-header-cell reference-col">Fecha</th><th className="table-header-cell reference-col text-center">Tipo</th><th className="table-header-cell product-col">Producto</th><th className="table-header-cell quantity-col">Cant.</th><th className="table-header-cell items-col">Items</th><th className="table-header-cell money-header money-col">Total</th><th className="table-header-cell money-col">Usuario</th></>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2a2a2a]/20">
+            <tbody>
               {renderTable(
                 itemsPaginados,
                 h.tab

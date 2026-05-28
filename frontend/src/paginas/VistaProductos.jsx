@@ -123,39 +123,39 @@ const VistaProductos = ({ usuario }) => {
                <tr className="table-header-cell">
                 {tab === 'baterias' ? (
                   <>
-                    <th className="table-header-cell col-ref">Referencia</th>
-                    <th className="table-header-cell col-producto">Marca · Caja · Descripción</th>
-                    <th className="table-header-cell col-cantidad">Cantidad</th>
-                    <th className="table-header-cell money-header col-money">Precio USD</th>
-                    <th className="table-header-cell col-estado">Estado stock</th>
-                    <th className="table-header-cell col-acciones">Acciones</th>
+                    <th className="table-header-cell reference-col">Referencia</th>
+                    <th className="table-header-cell product-col">Marca · Caja · Descripción</th>
+                    <th className="table-header-cell quantity-col">Cantidad</th>
+                    <th className="table-header-cell money-header money-col">Precio USD</th>
+                    <th className="table-header-cell status-col">Estado stock</th>
+                    <th className="table-header-cell actions-col">Acciones</th>
                   </>
                  ) : (
                    <>
-                     <th className="table-header-cell col-ref">Referencia</th>
-                     <th className="table-header-cell col-producto">Nombre</th>
-                     <th className="table-header-cell col-cantidad">Cantidad</th>
-                     <th className="table-header-cell money-header col-money">Precio</th>
-                     <th className="table-header-cell col-acciones">Acciones</th>
+                     <th className="table-header-cell reference-col">Referencia</th>
+                     <th className="table-header-cell product-col">Nombre</th>
+                     <th className="table-header-cell quantity-col">Cantidad</th>
+                     <th className="table-header-cell money-header money-col">Precio</th>
+                     <th className="table-header-cell actions-col">Acciones</th>
                    </>
                  )}
               </tr>
             </thead>
              <tbody>
                {cargando ? (
-                 <tr><td colSpan={6} className="px-8 py-20 text-center text-text-muted text-xs uppercase font-black tracking-widest">Cargando inventario…</td></tr>
+                 <tr><td colSpan={6} className="table-cell text-center text-text-muted text-xs uppercase font-black tracking-widest">Cargando inventario…</td></tr>
                ) : tab === 'baterias' ? (
                 itemsPaginados.map((row) => (
                    <tr key={row.id} className="transition-colors text-sm hover:bg-zinc-900/80">
-                     <td className="table-body-cell font-black text-accent">{row.codigo}</td>
-                     <td className="table-body-cell text-text-primary">
+                     <td className="table-cell font-black text-accent">{row.codigo}</td>
+                     <td className="table-cell text-text-primary">
                        <div className="font-bold">{row.marca}</div>
                        <div className="table-subtext uppercase tracking-widest">{row.tipo_caja}</div>
                        <div className="table-subtext">{row.condicion}</div>
                      </td>
-                     <td className="table-body-cell text-center font-black text-text-primary">{row.cantidad}</td>
-                     <td className="table-body-cell"><span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span></td>
-                    <td className="table-body-cell text-center">
+                     <td className="table-cell text-center font-black text-text-primary">{row.cantidad}</td>
+                     <td className="table-cell"><span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span></td>
+                    <td className="table-cell text-center">
                       {/* New premium badge */}
                       <div className="flex items-center justify-center">
                         <Badge cantidad={row.cantidad} size="md">
@@ -163,7 +163,7 @@ const VistaProductos = ({ usuario }) => {
                         </Badge>
                       </div>
                     </td>
-                    <td className="table-body-cell">
+                    <td className="table-cell">
                       <div className="action-cell">
                          {puedeEditar && <button type="button" onClick={() => abrirEditarBateria(row)} className="px-3 py-2 text-[13px] font-black uppercase tracking-wide rounded-xl bg-black border border-border-default text-accent hover:bg-yellow-500/10 transition-all">Editar</button>}
                          {puedeEliminar && <button type="button" onClick={() => eliminarBateriaFn(row.id)} className="p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 transition-all"><Trash2 size={18} /></button>}
@@ -174,14 +174,14 @@ const VistaProductos = ({ usuario }) => {
               ) : (
                 itemsPaginados.map((row) => (
                     <tr key={row.id} className="transition-colors text-sm hover:bg-zinc-900/80">
-                     <td className="table-body-cell font-mono font-black text-accent">{row.codigo}</td>
-                     <td className="table-body-cell text-text-primary">
+                     <td className="table-cell font-mono font-black text-accent">{row.codigo}</td>
+                     <td className="table-cell text-text-primary">
                        <div className="font-bold">{row.nombre}</div>
                        <div className="table-subtext truncate max-w-[220px]">{row.descripcion}</div>
                      </td>
-                     <td className="table-body-cell text-center font-black text-text-primary">{row.cantidad}</td>
-                     <td className="table-body-cell"><span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span></td>
-                    <td className="table-body-cell">
+                     <td className="table-cell text-center font-black text-text-primary">{row.cantidad}</td>
+                     <td className="table-cell"><span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span></td>
+                    <td className="table-cell">
                       <div className="action-cell">
                         {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="px-3 py-2 text-[13px] font-black uppercase tracking-wide rounded-xl bg-black border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10 transition-all shadow-glow-sm">Editar</button>}
                         {puedeEliminar && <button type="button" onClick={() => eliminarVarFn(row.id)} className="p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all shadow-glow-danger"><Trash2 size={18} /></button>}

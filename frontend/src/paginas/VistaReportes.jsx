@@ -144,10 +144,10 @@ const VistaReportes = ({ usuario }) => {
               <tr>
                 {vp.tipo.startsWith('ventas') && ['Fecha','Tipo','Código','Cliente','Vendido por','Cant.','PVP Unit.','Costo','IVA?','Total'].map(t => (
                   <th key={t} className={`table-header-cell ${
-                    t === 'Fecha' ? 'col-ref' :
-                    t === 'Cliente' ? 'col-cliente' :
-                    t === 'Cant.' ? 'col-cantidad' :
-                    ['PVP Unit.','Costo','Total'].includes(t) ? 'money-header col-money' :
+                    t === 'Fecha' ? 'reference-col' :
+                    t === 'Cliente' ? 'client-col' :
+                    t === 'Cant.' ? 'quantity-col' :
+                    ['PVP Unit.','Costo','Total'].includes(t) ? 'money-header money-col' :
                     ''
                   }`}>
                     {t}
@@ -155,10 +155,10 @@ const VistaReportes = ({ usuario }) => {
                 ))}
                 {vp.tipo === 'compras' && ['Fecha','Marca','Caja','Cond','Cantidad','Total','Proveedor'].map(t => (
                   <th key={t} className={`table-header-cell ${
-                    t === 'Fecha' ? 'col-ref' :
-                    t === 'Cantidad' ? 'col-cantidad' :
-                    t === 'Proveedor' ? 'col-cliente' :
-                    t === 'Total' ? 'money-header col-money' :
+                    t === 'Fecha' ? 'reference-col' :
+                    t === 'Cantidad' ? 'quantity-col' :
+                    t === 'Proveedor' ? 'client-col' :
+                    t === 'Total' ? 'money-header money-col' :
                     ''
                   }`}>
                     {t}
@@ -166,10 +166,10 @@ const VistaReportes = ({ usuario }) => {
                 ))}
                 {vp.tipo === 'chatarra' && ['Fecha','Operación','Caja','Cantidad','PU','Total','Contraparte'].map(t => (
                   <th key={t} className={`table-header-cell ${
-                    t === 'Fecha' ? 'col-ref' :
-                    t === 'Cantidad' ? 'col-cantidad' :
-                    t === 'Contraparte' ? 'col-cliente' :
-                    ['PU','Total'].includes(t) ? 'money-header col-money' :
+                    t === 'Fecha' ? 'reference-col' :
+                    t === 'Cantidad' ? 'quantity-col' :
+                    t === 'Contraparte' ? 'client-col' :
+                    ['PU','Total'].includes(t) ? 'money-header money-col' :
                     ''
                   }`}>
                     {t}
@@ -177,10 +177,10 @@ const VistaReportes = ({ usuario }) => {
                 ))}
                 {vp.tipo === 'inventario' && ['Clase','Ref','Marca','Caja','Cantidad','Costo Unit.','PVP Sugerido','Stock Valorizado','Estado'].map(t => (
                   <th key={t} className={`table-header-cell ${
-                    t === 'Ref' ? 'col-ref' :
-                    t === 'Cantidad' ? 'col-cantidad' :
-                    t === 'Estado' ? 'col-estado' :
-                    ['Costo Unit.','PVP Sugerido','Stock Valorizado'].includes(t) ? 'money-header col-money' :
+                    t === 'Ref' ? 'reference-col' :
+                    t === 'Cantidad' ? 'quantity-col' :
+                    t === 'Estado' ? 'status-col' :
+                    ['Costo Unit.','PVP Sugerido','Stock Valorizado'].includes(t) ? 'money-header money-col' :
                     ''
                   }`}>
                     {t}
@@ -188,59 +188,59 @@ const VistaReportes = ({ usuario }) => {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2a2a2a]/20">
+            <tbody>
               {vp.cargando ? (
-                <tr><td colSpan={12} className="table-body-cell text-center text-text-muted font-black uppercase tracking-[0.3em]">Consultando base de datos…</td></tr>
+                <tr><td colSpan={12} className="table-cell text-center text-text-muted font-black uppercase tracking-[0.3em]">Consultando base de datos…</td></tr>
               ) : (
                 vp.registros.map((r, idx) => (
                   <tr key={idx} className="transition-colors hover:bg-zinc-900/80 border-b border-border-default">
                     {vp.tipo.startsWith('ventas') && (
                       <>
-                        <td className="table-body-cell">{formatearFecha(r.fecha)}</td>
-                        <td className="table-body-cell uppercase table-subtext text-yellow-100">{r.tipo}</td>
-                        <td className="table-body-cell font-mono">{obtenerCodigoManual(r)}</td>
-                        <td className="table-body-cell">{r.nombre_cliente}</td>
-                        <td className="table-body-cell">{r.usuario_nombre || '-'}</td>
-                        <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
-                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.costo_unitario || 0).toFixed(2)}</span></td>
-                        <td className="table-body-cell">{safeNumber(r.con_iva) === 1 ? 'Con IVA' : 'Sin IVA'}</td>
-                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
+                        <td className="table-cell">{formatearFecha(r.fecha)}</td>
+                        <td className="table-cell uppercase table-subtext text-yellow-100">{r.tipo}</td>
+                        <td className="table-cell font-mono">{obtenerCodigoManual(r)}</td>
+                        <td className="table-cell">{r.nombre_cliente}</td>
+                        <td className="table-cell">{r.usuario_nombre || '-'}</td>
+                        <td className="table-cell text-center font-black">{r.cantidad}</td>
+                        <td className="table-cell"><span className="money-cell">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
+                        <td className="table-cell"><span className="money-cell">${safeNumber(r.costo_unitario || 0).toFixed(2)}</span></td>
+                        <td className="table-cell">{safeNumber(r.con_iva) === 1 ? 'Con IVA' : 'Sin IVA'}</td>
+                        <td className="table-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
                       </>
                     )}
                     {vp.tipo === 'compras' && (
                       <>
-                        <td className="table-body-cell">{formatearFecha(r.fecha)}</td>
-                        <td className="table-body-cell">{r.marca}</td>
-                        <td className="table-body-cell">{r.tipo_caja}</td>
-                        <td className="table-body-cell">{r.condicion}</td>
-                        <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
-                        <td className="table-body-cell">{r.proveedor}</td>
+                        <td className="table-cell">{formatearFecha(r.fecha)}</td>
+                        <td className="table-cell">{r.marca}</td>
+                        <td className="table-cell">{r.tipo_caja}</td>
+                        <td className="table-cell">{r.condicion}</td>
+                        <td className="table-cell text-center font-black">{r.cantidad}</td>
+                        <td className="table-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
+                        <td className="table-cell">{r.proveedor}</td>
                       </>
                     )}
                     {vp.tipo === 'chatarra' && (
                       <>
-                        <td className="table-body-cell">{formatearFecha(r.fecha)}</td>
-                        <td className="table-body-cell uppercase">{r.tipo_operacion}</td>
-                        <td className="table-body-cell">{r.tipo_caja}</td>
-                        <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
-                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
-                        <td className="table-body-cell">{r.nombre_cliente_proveedor}</td>
+                        <td className="table-cell">{formatearFecha(r.fecha)}</td>
+                        <td className="table-cell uppercase">{r.tipo_operacion}</td>
+                        <td className="table-cell">{r.tipo_caja}</td>
+                        <td className="table-cell text-center font-black">{r.cantidad}</td>
+                        <td className="table-cell"><span className="money-cell">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
+                        <td className="table-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
+                        <td className="table-cell">{r.nombre_cliente_proveedor}</td>
                       </>
                     )}
                     {vp.tipo === 'inventario' && (
                       <>
-                        <td className="table-body-cell uppercase text-[11px]">{r.clase}</td>
-                        <td className="table-body-cell font-mono">{r.ref}</td>
-                        <td className="table-body-cell">{r.marca}</td>
-                        <td className="table-body-cell">{r.tipo_caja || '—'}</td>
-                        <td className="table-body-cell font-black">{r.cantidad}</td>
-                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio).toFixed(2)}</span></td>
-                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</span></td>
-                        <td className="table-body-cell"><span className="money-cell">${(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2)}</span></td>
-                        <td className="table-body-cell">
+                        <td className="table-cell uppercase text-[11px]">{r.clase}</td>
+                        <td className="table-cell font-mono">{r.ref}</td>
+                        <td className="table-cell">{r.marca}</td>
+                        <td className="table-cell">{r.tipo_caja || '—'}</td>
+                        <td className="table-cell font-black">{r.cantidad}</td>
+                        <td className="table-cell"><span className="money-cell">${safeNumber(r.precio).toFixed(2)}</span></td>
+                        <td className="table-cell"><span className="money-cell">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</span></td>
+                        <td className="table-cell"><span className="money-cell">${(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2)}</span></td>
+                        <td className="table-cell">
                           <div className="action-cell">
                             <Badge cantidad={r.cantidad} size="sm">
                               {r.estado_stock === 'sin_stock' ? 'Sin stock' : r.cantidad <= 5 ? 'Stock bajo' : 'Con stock'}
