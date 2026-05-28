@@ -328,6 +328,36 @@
   .badge-chatarra {
     @apply badge border border-orange-500/30 text-orange-400 bg-orange-500/10;
   }
+  .badge-operation-buy {
+    background: rgba(0, 230, 118, .12);
+    color: #00E676;
+    border: 1px solid rgba(0, 230, 118, .28);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .badge-operation-sale {
+    background: rgba(255, 77, 77, .12);
+    color: #FF4D4D;
+    border: 1px solid rgba(255, 77, 77, .28);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
   .badge-info {
     @apply badge border border-info-border text-info bg-info-bg;
   }
@@ -910,6 +940,29 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   gap: 0;
 }
 
+.modal-success {
+  position: relative;
+  max-width: 560px;
+  width: 100%;
+  background: #121212;
+  border: 1px solid rgba(227,198,106,.16);
+  border-radius: 22px;
+  padding: 32px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.55);
+}
+
+.success-icon-wrap {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto;
+  border-radius: 999px;
+  border: 1px solid rgba(0,230,118,.45);
+  background: rgba(0,230,118,.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
   .pagination-modern,
   .pagination-premium {
@@ -923,5 +976,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .pagination-right {
     justify-content: center;
     width: 100%;
+  }
+
+  .modal-success {
+    width: calc(100% - 32px);
+    padding: 24px;
+    border-radius: 18px;
   }
 }

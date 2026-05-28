@@ -269,8 +269,8 @@ const VistaFacturas = ({ usuario }) => {
                   </div>
 
                   {formFactura.items.length > 0 && (
-                    <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_1.2fr_minmax(120px,.7fr)_minmax(140px,.8fr)_minmax(120px,.7fr)_minmax(120px,.7fr)_36px] gap-2 mb-2">
-                          {['Marca','Caja','Estado','Código','Cant.','P. Unit.','Desc.','Subtotal'].map(t => <span key={t} className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t}</span>)}
+                    <div className="hidden md:grid grid-cols-[1.5fr_1fr_1fr_1.2fr_minmax(120px,.7fr)_minmax(140px,.8fr)_minmax(120px,.7fr)_36px] gap-2 mb-2">
+                          {['Marca','Caja','Estado','Código','Cant.','P. Unit.','Subtotal'].map(t => <span key={t} className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t}</span>)}
                       <span />
                     </div>
                   )}
@@ -289,7 +289,7 @@ const VistaFacturas = ({ usuario }) => {
                         actualizarItem(index, 'descripcion', parts.join(' - '));
                       };
                       return (
-                        <div key={index} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1.2fr_minmax(120px,.7fr)_minmax(140px,.8fr)_minmax(120px,.7fr)_minmax(120px,.7fr)_36px] gap-3 md:gap-2 items-start md:items-center py-4 md:py-3 transition-colors border-b border-border-default/60 last:border-b-0">
+                        <div key={index} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1.5fr_1fr_1fr_1.2fr_minmax(120px,.7fr)_minmax(140px,.8fr)_minmax(120px,.7fr)_36px] gap-3 md:gap-2 items-start md:items-center py-4 md:py-3 transition-colors border-b border-border-default/60 last:border-b-0">
                           {['marca','caja','estado','codigo'].map((fld, fi) => (
                             <div key={fld} className="space-y-1 md:space-y-0">
                                <label className="md:hidden text-[9px] font-black uppercase text-text-muted">{['Marca','Caja','Estado','Código'][fi]}</label>
@@ -307,14 +307,9 @@ const VistaFacturas = ({ usuario }) => {
                              <div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">$</span>
                               <input type="number" min="0" step="0.01" className="input-premium pl-5 text-right h-10" value={item.precio_unitario} onChange={(e) => actualizarItem(index, 'precio_unitario', e.target.value)} /></div>
                           </div>
-                          <div className="space-y-1 md:space-y-0">
-                             <label className="md:hidden text-[9px] font-black uppercase text-text-muted">Desc.</label>
-                             <div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">$</span>
-                              <input type="number" min="0" step="0.01" className="input-premium pl-5 text-right h-10" value={item.descuento} onChange={(e) => actualizarItem(index, 'descuento', e.target.value)} /></div>
-                          </div>
                            <div className="text-right text-sm tabular-nums">
                              <label className="md:hidden text-[9px] font-black uppercase text-text-muted block mb-1">Subtotal</label>
-                            <span className="money-value">${(safeNumber(item.cantidad) * safeNumber(item.precio_unitario) - safeNumber(item.descuento)).toFixed(2)}</span>
+                            <span className="money-value">${(safeNumber(item.cantidad) * safeNumber(item.precio_unitario)).toFixed(2)}</span>
                           </div>
                            <div className="flex justify-end"><button onClick={() => eliminarItem(index)} className="flex items-center justify-center w-12 h-12 md:w-8 md:h-8 rounded-xl text-error bg-error/10 md:bg-transparent hover:bg-error/10 transition-all"><Trash2 size={18} /></button></div>
                         </div>
@@ -335,13 +330,7 @@ const VistaFacturas = ({ usuario }) => {
                      <textarea className="input-premium h-24 resize-none mt-2" placeholder="Agregue observaciones de la factura" value={formFactura.notas} onChange={(e) => setFormFactura({...formFactura, notas: e.target.value})} />
                    </div>
                   <div className="space-y-3 py-1">
-                    <div className="flex justify-between items-center text-sm text-text-muted"><span>Subtotal:</span><span className="money-value">${safeNumber(totalesCalculados.subtotal).toFixed(2)}</span></div>
-                    <div className="flex justify-between items-center text-sm text-text-muted">
-                      <span>Descuento:</span>
-                      <div className="flex items-center gap-2"><span className="text-text-muted">$</span>
-                        <input type="number" className="input-premium w-20 h-10 text-right" value={formFactura.descuento_global} onChange={(e) => setFormFactura({...formFactura, descuento_global: e.target.value})} /></div>
-                    </div>
-                    <div className="flex justify-between items-center text-sm text-text-muted"><span>Subtotal Neto:</span><span className="money-value">${safeNumber(totalesCalculados.base_imponible).toFixed(2)}</span></div>
+                    <div className="flex justify-between items-center text-sm text-text-muted"><span>Subtotal:</span><span className="money-value">${safeNumber(totalesCalculados.base_imponible).toFixed(2)}</span></div>
                     <div className="flex justify-between items-center">
                       <label className="flex items-center gap-2 cursor-pointer text-sm text-text-muted">
                         <input type="checkbox" className="accent-accent rounded" checked={formFactura.con_iva} onChange={(e) => setFormFactura({...formFactura, con_iva: e.target.checked})} />

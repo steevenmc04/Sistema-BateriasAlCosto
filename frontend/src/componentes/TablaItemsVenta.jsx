@@ -315,8 +315,11 @@ export default function TablaItemsVenta({
               valorInicial={item.nombre || ''}
               mode="varios"
               onSelect={(p) => {
-                onActualizarCampo(index, 'producto_id', p.id);
+                onActualizarCampo(index, 'producto_id', p.producto_id ?? p.id ?? null);
+                onActualizarCampo(index, 'codigo', p.codigo || '');
                 onActualizarCampo(index, 'nombre', p.nombre || '');
+                onActualizarCampo(index, 'marca', p.marca || p.nombre || '');
+                onActualizarCampo(index, 'tipo_caja', p.tipo_caja || '');
                 onActualizarCampo(index, 'stock_disponible', safeNumber(getStock(p)));
                 if (!item.precio_unitario) {
                   onActualizarCampo(index, 'precio_unitario', Number(getPrecio(p)));

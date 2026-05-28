@@ -9,6 +9,39 @@ import Auditoria from '../modelos/Auditoria.js';
  * Controla el catálogo de productos unificado, categorías y Kardex de movimientos de stock.
  */
 class ControladorInventario {
+  static _normalizarTexto(valor) {
+    return String(valor || '').trim().toLowerCase();
+  }
+
+  static _esBateriaPOS(row) {
+    if (!row || typeof row !== 'object') return false;
+    if (row.es_bateria === true || Number(row.es_bateria) === 1) return true;
+    if (row.es_bateria === false || Number(row.es_bateria) === 0) return false;
+
+    const texto = [
+      row.categoria,
+      row.tipo_producto,
+      row.tipo,
+      row.nombre_categoria,
+      row.clase_producto
+    ]
+      .filter(Boolean)
+      .map((v) => ControladorInventario._normalizarTexto(v))
+      .join(' ');
+
+    if (texto.includes('bateria') || texto.includes('batería')) return true;
+
+    const codigo = ControladorInventario._normalizarTexto(row.codigo);
+    if (codigo.startsWith('bat-')) return true;
+
+    const tipoCaja = ControladorInventario._normalizarTexto(row.tipo_caja);
+    const marca = ControladorInventario._normalizarTexto(row.marca);
+    const marcasBateria = ['bosch', 'dacar', 'ecuador'];
+    if (marcasBateria.includes(marca) && tipoCaja.includes('caja')) return true;
+
+    return false;
+  }
+
   // ============================================================================
   // PRODUCTOS
   // ============================================================================
@@ -40,65 +73,70 @@ class ControladorInventario {
       // --- 1. Asegurar que productos tenga datos (sync desde inventario_baterias si es necesario) ---
       const [check] = await pool.query('SELECT COUNT(*) AS total FROM productos WHERE activo = 1');
       if (check[0].total === 0) {
-        console.log('PRODUCTOS POS - productos vacío, sincronizando...');
+        console.log('PRODUCTOS POS - productos vacío, sincronizando baterías...');
         await ControladorInventario._sincronizarBaterias();
       }
 
-      // --- 2. Consultar productos con columnas seguras (evita p.tipo, p.precio_venta si no existen) ---
-      let productos;
-      try {
-        const [rows] = await pool.query(`
-          SELECT p.id, p.codigo, p.nombre, p.marca, p.tipo_caja,
-                 COALESCE(s.cantidad, 0) AS stock,
-                 0 AS precio,
-                 p.condicion
-          FROM productos p
-          LEFT JOIN inventario_stock s ON s.producto_id = p.id
-          WHERE p.activo = 1
-          ORDER BY p.marca, p.tipo_caja
-        `);
-        productos = rows;
-        console.log('PRODUCTOS POS - consulta OK:', JSON.stringify({ count: rows.length }));
-      } catch (err) {
-        console.log('PRODUCTOS POS - query falló, leyendo directo de inventario_baterias:', err.message);
-        // Fallback extremo: lectura directa desde inventario_baterias
-        const [baterias] = await pool.query(
-          'SELECT id, codigo, marca, condicion, tipo_caja, cantidad, precio FROM inventario_baterias ORDER BY marca, tipo_caja'
-        );
-        if (baterias.length > 0) {
-          return res.status(200).json(baterias.map(b => ({
-            id: b.id,
-            codigo: b.codigo,
-            nombre: `${b.marca} ${b.tipo_caja}`.trim(),
-            marca: b.marca,
-            tipo_caja: b.tipo_caja,
-            stock: Number(b.cantidad),
-            precio: Number(b.precio),
-            tipo: 'bateria',
-            condicion: b.condicion,
-            estado: Number(b.cantidad) > 0 ? 'disponible' : 'sin_stock'
-          })));
-        }
-        productos = [];
-        console.log('PRODUCTOS POS - sin datos');
-      }
+      // --- 2. Asegurar sincronización de productos varios en tabla productos ---
+      await ControladorInventario._sincronizarVarios();
 
-      if (!productos || productos.length === 0) {
+      // --- 3. Consultar productos activos unificados con metadata para filtrar en frontend ---
+      const [rows] = await pool.query(`
+        SELECT
+          p.id,
+          p.codigo,
+          p.nombre,
+          p.marca,
+          p.tipo_caja,
+          p.condicion,
+          COALESCE(p.precio_venta, p.precio_costo, 0) AS precio,
+          COALESCE(s.cantidad, 0) AS stock,
+          COALESCE(c.nombre, '') AS categoria,
+          CASE WHEN ib.id IS NOT NULL THEN 1 ELSE 0 END AS es_bateria,
+          CASE
+            WHEN ib.id IS NOT NULL THEN 'bateria'
+            WHEN iv.id IS NOT NULL THEN 'varios'
+            ELSE 'general'
+          END AS tipo_producto
+        FROM productos p
+        LEFT JOIN inventario_stock s ON s.producto_id = p.id
+        LEFT JOIN categorias c ON c.id = p.categoria_id
+        LEFT JOIN inventario_baterias ib ON ib.codigo = p.codigo
+        LEFT JOIN inventario_varios iv ON iv.codigo = p.codigo
+        WHERE p.activo = 1
+        ORDER BY p.nombre ASC
+      `);
+
+      if (!rows || rows.length === 0) {
         return res.status(200).json([]);
       }
 
-      return res.status(200).json(productos.map(p => ({
-        id: p.id,
-        codigo: p.codigo,
-        nombre: p.nombre,
-        marca: p.marca,
-        tipo_caja: p.tipo_caja,
-        stock: Number(p.stock),
-        precio: Number(p.precio),
-        tipo: 'bateria',
-        condicion: p.condicion,
-        estado: Number(p.stock) > 0 ? 'disponible' : 'sin_stock'
-      })));
+      const productos = rows.map((p) => {
+        const esBateria = ControladorInventario._esBateriaPOS(p);
+        const stock = Number(p.stock ?? 0);
+        const precio = Number(p.precio ?? 0);
+        return {
+          id: Number(p.id),
+          producto_id: Number(p.id),
+          codigo: p.codigo || '',
+          nombre: p.nombre || '',
+          marca: p.marca || '',
+          tipo_caja: p.tipo_caja || '',
+          categoria: p.categoria || '',
+          tipo_producto: esBateria ? 'bateria' : 'varios',
+          tipo: esBateria ? 'bateria' : 'varios',
+          es_bateria: esBateria,
+          stock,
+          stock_actual: stock,
+          cantidad_disponible: stock,
+          precio,
+          precio_venta: precio,
+          condicion: p.condicion || (esBateria ? 'Nueva' : '-'),
+          estado: stock > 0 ? 'disponible' : 'sin_stock'
+        };
+      });
+
+      return res.status(200).json(productos);
     } catch (error) {
       console.error('ERROR PRODUCTOS POS (crítico):', error);
       Logger.error('ControladorInventario', 'Error crítico al listar productos para POS', error);
@@ -159,6 +197,73 @@ class ControladorInventario {
         console.log('PRODUCTOS POS - error sync item:', b.codigo, itemErr.message);
       }
     }
+  }
+
+  // Sincroniza productos desde inventario_varios -> productos + inventario_stock.
+  // Se ejecuta en cada consulta POS para asegurar que nuevos VAR-* estén disponibles.
+  static async _sincronizarVarios() {
+    let categoriaId = 1;
+    try {
+      const [cats] = await pool.query(
+        `SELECT id
+         FROM categorias
+         WHERE LOWER(nombre) LIKE '%vario%'
+            OR LOWER(nombre) LIKE '%accesorio%'
+            OR LOWER(nombre) LIKE '%producto%'
+         ORDER BY id
+         LIMIT 1`
+      );
+      if (cats && cats.length > 0) {
+        categoriaId = cats[0].id;
+      } else {
+        const [fallbackCats] = await pool.query('SELECT id FROM categorias ORDER BY id LIMIT 1');
+        if (fallbackCats && fallbackCats.length > 0) categoriaId = fallbackCats[0].id;
+      }
+    } catch (_) { /* fallback categoria_id=1 */ }
+
+    await pool.query(
+      `INSERT INTO productos (
+         categoria_id, codigo, nombre, descripcion, marca, modelo, condicion, tipo_caja,
+         precio_costo, precio_venta, stock_minimo, activo
+       )
+       SELECT
+         ?, iv.codigo, iv.nombre, iv.descripcion, iv.nombre, NULL, 'Nueva', '-',
+         COALESCE(iv.precio, 0), COALESCE(iv.precio, 0), 0, 1
+       FROM inventario_varios iv
+       LEFT JOIN productos p ON p.codigo = iv.codigo
+       WHERE p.id IS NULL`,
+      [categoriaId]
+    );
+
+    await pool.query(
+      `UPDATE productos p
+       INNER JOIN inventario_varios iv ON iv.codigo = p.codigo
+       SET
+         p.nombre = iv.nombre,
+         p.descripcion = iv.descripcion,
+         p.marca = iv.nombre,
+         p.tipo_caja = '-',
+         p.condicion = 'Nueva',
+         p.precio_costo = COALESCE(iv.precio, p.precio_costo, 0),
+         p.precio_venta = COALESCE(iv.precio, p.precio_venta, 0),
+         p.activo = 1`
+    );
+
+    await pool.query(
+      `INSERT INTO inventario_stock (producto_id, cantidad)
+       SELECT p.id, COALESCE(iv.cantidad, 0)
+       FROM productos p
+       INNER JOIN inventario_varios iv ON iv.codigo = p.codigo
+       LEFT JOIN inventario_stock s ON s.producto_id = p.id
+       WHERE s.producto_id IS NULL`
+    );
+
+    await pool.query(
+      `UPDATE inventario_stock s
+       INNER JOIN productos p ON p.id = s.producto_id
+       INNER JOIN inventario_varios iv ON iv.codigo = p.codigo
+       SET s.cantidad = COALESCE(iv.cantidad, 0)`
+    );
   }
 
   static async obtener(req, res) {

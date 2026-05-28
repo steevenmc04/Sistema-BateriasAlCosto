@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { inventarioAPI, extraerMensajeError } from '../servicios/servicios.js';
+import { inventarioAPI, chatarraAPI, extraerMensajeError } from '../servicios/servicios.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
 
 const vacioBateria = () => ({
@@ -20,13 +20,59 @@ const vacioVario = () => ({
   precio: '',
 });
 
-/**
- * Inventario: pestañas baterías y otros productos (referencias VAR-xxxx).
- */
+export const obtenerCategoriaInventario = (producto = {}) => {
+  const texto = [
+    producto.categoria,
+    producto.tipo_producto,
+    producto.tipo,
+    producto.nombre_categoria,
+    producto.es_bateria ? 'bateria' : '',
+    producto.condicion,
+    producto.estado,
+    producto.descripcion,
+    producto.nombre,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (texto.includes('chatarra') || String(producto.condicion || '').toLowerCase() === 'chatarra') {
+    return 'chatarra';
+  }
+
+  if (
+    producto.es_bateria === true ||
+    texto.includes('bateria') ||
+    texto.includes('batería') ||
+    Boolean(producto.tipo_caja)
+  ) {
+    return 'bateria';
+  }
+
+  return 'varios';
+};
+
+const filtrarPorStock = (items = [], filtroStock = 'TODOS') => {
+  if (filtroStock === 'TODOS') return items;
+  if (filtroStock === 'DISPONIBLE') return items.filter((i) => Number(i.cantidad) > 0);
+  if (filtroStock === 'AGOTADO') return items.filter((i) => Number(i.cantidad) === 0);
+  return items;
+};
+
+const filtrarPorTexto = (items = [], busqueda = '', campos = []) => {
+  const t = busqueda.toLowerCase().trim();
+  if (!t) return items;
+
+  return items.filter((item) =>
+    campos.some((campo) => String(item?.[campo] ?? '').toLowerCase().includes(t))
+  );
+};
+
 export function useVistaProductos() {
   const [tab, setTab] = useState('baterias');
   const [baterias, setBaterias] = useState([]);
   const [varios, setVarios] = useState([]);
+  const [chatarra, setChatarra] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroStock, setFiltroStock] = useState('TODOS');
@@ -44,7 +90,8 @@ export function useVistaProductos() {
   const [condicionesDB, setCondicionesDB] = useState([]);
 
   const recargarCatalogos = useCallback(() => {
-    return inventarioAPI.obtenerCatalogos()
+    return inventarioAPI
+      .obtenerCatalogos()
       .then((res) => {
         setMarcasDB(res.data.marcas || []);
         setTiposCajaDB(res.data.tipos_caja || []);
@@ -60,12 +107,29 @@ export function useVistaProductos() {
   const recargar = useCallback(async () => {
     setCargando(true);
     try {
-      const [rB, rV] = await Promise.all([
+      const [rB, rV, rC] = await Promise.allSettled([
         inventarioAPI.listarBaterias(),
         inventarioAPI.listarVarios(),
+        chatarraAPI.listar({ limite: 500 }),
       ]);
-      setBaterias(rB.data);
-      setVarios(rV.data);
+
+      if (rB.status === 'rejected') throw rB.reason;
+      if (rV.status === 'rejected') throw rV.reason;
+
+      const bateriasData = Array.isArray(rB.value.data) ? rB.value.data : [];
+      const variosData = Array.isArray(rV.value.data) ? rV.value.data : [];
+
+      const chatarraData = rC.status === 'fulfilled'
+        ? (Array.isArray(rC.value.data?.data)
+          ? rC.value.data.data
+          : Array.isArray(rC.value.data)
+            ? rC.value.data
+            : [])
+        : [];
+
+      setBaterias(bateriasData);
+      setVarios(variosData);
+      setChatarra(chatarraData);
     } catch (e) {
       setErrorMsg(extraerMensajeError(e));
     } finally {
@@ -145,7 +209,9 @@ export function useVistaProductos() {
     try {
       const { data } = await inventarioAPI.previewCodigoVario();
       setProxVar(data.codigo);
-    } catch {/* ignore */}
+    } catch {
+      // ignore
+    }
   };
 
   const abrirNuevoVario = async () => {
@@ -201,33 +267,60 @@ export function useVistaProductos() {
     }
   };
 
-  const bFiltradas = useMemo(() => {
-    let result = baterias;
-    if (filtroStock === 'DISPONIBLE') result = result.filter(b => Number(b.cantidad) > 0);
-    else if (filtroStock === 'AGOTADO') result = result.filter(b => Number(b.cantidad) === 0);
+  const inventarioClasificado = useMemo(() => {
+    return [...baterias, ...varios].map((producto) => ({
+      ...producto,
+      _categoriaInventario: obtenerCategoriaInventario(producto),
+    }));
+  }, [baterias, varios]);
 
-    const t = busqueda.toLowerCase().trim();
-    if (!t) return result;
-    return result.filter(
-      (b) =>
-        String(b.codigo).toLowerCase().includes(t) ||
-        String(b.marca).toLowerCase().includes(t) ||
-        String(b.tipo_caja).toLowerCase().includes(t)
-    );
-  }, [baterias, busqueda, filtroStock]);
+  const bateriasClasificadas = useMemo(
+    () => inventarioClasificado.filter((p) => p._categoriaInventario === 'bateria'),
+    [inventarioClasificado]
+  );
+
+  const variosClasificados = useMemo(
+    () => inventarioClasificado.filter((p) => p._categoriaInventario === 'varios'),
+    [inventarioClasificado]
+  );
+
+  const chatarraDesdeInventario = useMemo(
+    () => inventarioClasificado.filter((p) => p._categoriaInventario === 'chatarra'),
+    [inventarioClasificado]
+  );
+
+  const chatarraDesdeMovimientos = useMemo(() => {
+    return (Array.isArray(chatarra) ? chatarra : []).map((registro, idx) => ({
+      id: `chatarra-op-${registro.id ?? idx}`,
+      codigo: registro.producto_codigo || `CHAT-${registro.id ?? idx + 1}`,
+      nombre:
+        [registro.producto_marca, registro.producto_tipo_caja].filter(Boolean).join(' · ') ||
+        'Movimiento de chatarra',
+      descripcion: registro.notas || '',
+      condicion: 'Chatarra',
+      cantidad: Number(registro.cantidad_total) || 0,
+      precio: Number(registro.total) || 0,
+      estado_stock: Number(registro.cantidad_total) > 0 ? 'con_stock' : 'sin_stock',
+      tipo_operacion: registro.tipo_operacion || '',
+      creado_en: registro.creado_en || registro.fecha,
+    }));
+  }, [chatarra]);
+
+  const bFiltradas = useMemo(() => {
+    const conStock = filtrarPorStock(bateriasClasificadas, filtroStock);
+    return filtrarPorTexto(conStock, busqueda, ['codigo', 'marca', 'tipo_caja']);
+  }, [bateriasClasificadas, busqueda, filtroStock]);
 
   const vFiltradas = useMemo(() => {
-    let result = varios;
-    if (filtroStock === 'DISPONIBLE') result = result.filter(v => Number(v.cantidad) > 0);
-    else if (filtroStock === 'AGOTADO') result = result.filter(v => Number(v.cantidad) === 0);
+    const conStock = filtrarPorStock(variosClasificados, filtroStock);
+    return filtrarPorTexto(conStock, busqueda, ['codigo', 'nombre', 'descripcion']);
+  }, [variosClasificados, busqueda, filtroStock]);
 
-    const t = busqueda.toLowerCase().trim();
-    if (!t) return result;
-    return result.filter(
-      (v) =>
-        String(v.codigo).toLowerCase().includes(t) || String(v.nombre).toLowerCase().includes(t)
-    );
-  }, [varios, busqueda, filtroStock]);
+  const chFiltradas = useMemo(() => {
+    const base = [...chatarraDesdeInventario, ...chatarraDesdeMovimientos];
+    const conStock = filtrarPorStock(base, filtroStock);
+    return filtrarPorTexto(conStock, busqueda, ['codigo', 'nombre', 'descripcion', 'tipo_operacion']);
+  }, [chatarraDesdeInventario, chatarraDesdeMovimientos, busqueda, filtroStock]);
 
   return {
     tab,
@@ -239,7 +332,9 @@ export function useVistaProductos() {
     setFiltroStock,
     bFiltradas,
     vFiltradas,
+    chFiltradas,
     baterias,
+    chatarra,
     proxVar,
     formBat,
     setFormBat,

@@ -5,6 +5,36 @@ import { useOperacionMultiItem } from './useOperacionMultiItem.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
 import { esProductoBateria } from '../utilidades/esProductoBateria.js';
 
+const aNumeroSeguro = (valor, fallback = 0) => {
+  const n = Number(valor);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const normalizarProductoPOS = (p = {}) => {
+  const id = aNumeroSeguro(p.id ?? p.producto_id, null);
+  const stock = aNumeroSeguro(p.stock ?? p.stock_actual ?? p.cantidad_disponible ?? p.cantidad, 0);
+  const precio = aNumeroSeguro(p.precio ?? p.precio_venta ?? p.pvp ?? p.precio_costo, 0);
+
+  return {
+    ...p,
+    id,
+    producto_id: id,
+    codigo: p.codigo ?? p.referencia ?? '',
+    nombre: p.nombre ?? p.descripcion ?? '',
+    marca: p.marca ?? p.nombre ?? '',
+    tipo_caja: p.tipo_caja ?? p.descripcion ?? p.nombre ?? '',
+    categoria: p.categoria ?? p.nombre_categoria ?? '',
+    tipo_producto: p.tipo_producto ?? p.tipo ?? '',
+    es_bateria: p.es_bateria === true || p.es_bateria === 1 || p.es_bateria === '1',
+    stock,
+    stock_actual: stock,
+    cantidad_disponible: stock,
+    precio,
+    precio_venta: precio,
+    precio_costo: precio,
+  };
+};
+
 export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
   const [tab, setTab] = useState(tabPredeterminado);
   const [cargando, setCargando] = useState(false);
@@ -47,10 +77,13 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
       const ts = Date.now();
       const res = await apiCliente.get(`${API}/api/inventario/productos-pos?t=${ts}`);
       const productosArray = Array.isArray(res.data) ? res.data : res.data?.data || [];
-      if (import.meta?.env?.DEV) console.log('PRODUCTOS POS CARGADOS:', productosArray);
-      setBaterias(productosArray.filter((p) => esProductoBateria(p)));
-      setVarios(productosArray.filter((p) => !esProductoBateria(p)));
-      setProductos(productosArray);
+      const productosNormalizados = productosArray.map(normalizarProductoPOS);
+      const bateriasFiltradas = productosNormalizados.filter((p) => esProductoBateria(p));
+      const variosFiltrados = productosNormalizados.filter((p) => !esProductoBateria(p));
+
+      setBaterias(bateriasFiltradas);
+      setVarios(variosFiltrados);
+      setProductos(productosNormalizados);
     } catch (err) {
       setBaterias([]);
       setVarios([]);
@@ -310,7 +343,12 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
       };
 
       const res = await chatarraAPI.crear(body);
-      setExitoData({ tipo: 'chatarra', id: res.data?.data?.chatarra_id, total: chatarraItems.totales.total });
+      setExitoData({
+        tipo: 'chatarra',
+        id: res.data?.data?.chatarra_id,
+        total: chatarraItems.totales.total,
+        tipo_operacion: tipoChatarra,
+      });
       setModalExito(true);
       notificarGlobal('Operación de chatarra procesada correctamente.', 'exito');
       await cargarProductos();

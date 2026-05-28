@@ -17,6 +17,16 @@ const formatearFecha = (f) => {
   try { return new Date(f).toLocaleDateString(); } catch { return '-'; }
 };
 
+const obtenerEtiquetaOperacionChatarra = (tipoOperacion) => {
+  if (tipoOperacion === 'entrada') return 'Compra';
+  if (tipoOperacion === 'salida') return 'Venta';
+  return '-';
+};
+
+const obtenerClaseOperacionChatarra = (tipoOperacion) => {
+  return tipoOperacion === 'entrada' ? 'badge-operation-buy' : 'badge-operation-sale';
+};
+
 const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
   const h = useVistaTransacciones(tabPredeterminado);
   const navigate = useNavigate();
@@ -90,28 +100,73 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
     </div>
   );
 
-  const ModalExito = ({ tipo, id, total }) => (
-    <div className="p-16 flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in duration-500">
-      <div className="w-24 h-24 bg-success/10 text-success rounded-full flex items-center justify-center">
-        <CheckCircle2 size={48} />
+  const ModalExito = ({ tipo, id, total, tipoOperacion }) => {
+    const titulo =
+      tipo === 'venta'
+        ? 'Venta Exitosa'
+        : tipo === 'compra'
+          ? 'Compra Exitosa'
+          : (tipoOperacion === 'entrada'
+            ? 'Compra de Chatarra Exitosa'
+            : tipoOperacion === 'salida'
+              ? 'Venta de Chatarra Exitosa'
+              : 'Chatarra Registrada');
+
+    return (
+      <div className="modal-success animate-[fadeIn_0.25s_ease-out]">
+        <button
+          type="button"
+          onClick={() => h.cerrarModalExito()}
+          className="absolute right-4 top-4 w-9 h-9 rounded-xl border border-border-default text-text-muted hover:text-text-primary hover:border-border-strong transition-colors flex items-center justify-center"
+          aria-label="Cerrar"
+        >
+          <X size={18} />
+        </button>
+
+        <div className="space-y-5 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-yellow-100">Operación completada</p>
+
+          <div className="success-icon-wrap">
+            <CheckCircle2 size={38} className="text-success" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-[26px] md:text-[30px] font-black italic uppercase tracking-tight text-text-primary">
+              {titulo}
+            </h3>
+            <p className="text-text-muted text-sm">
+              Transacción #{id} registrada correctamente.
+            </p>
+          </div>
+
+          <div className="space-y-1.5 pt-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-text-muted">Total</p>
+            <p className="money-value text-[34px] leading-none">${safeNumber(total).toFixed(2)}</p>
+          </div>
+        </div>
+
+        <div className={`mt-8 grid gap-3 ${tipo === 'venta' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+          <button
+            type="button"
+            onClick={() => h.cerrarModalExito()}
+            className="h-11 rounded-xl border border-border-default bg-zinc-950 text-text-primary text-[11px] font-black uppercase tracking-[0.12em] hover:border-border-strong hover:bg-zinc-900 transition-colors"
+          >
+            Cerrar
+          </button>
+
+          {tipo === 'venta' && (
+            <button
+              type="button"
+              onClick={() => { h.cerrarModalExito(); navigate('/facturacion'); }}
+              className="h-11 rounded-xl border border-yellow-100/30 bg-yellow-100 text-black text-[11px] font-black uppercase tracking-[0.12em] hover:brightness-110 transition-all"
+            >
+              Generar Factura
+            </button>
+          )}
+        </div>
       </div>
-      <div className="space-y-2">
-        <h3 className="text-3xl font-black text-text-primary uppercase italic">
-          {tipo === 'venta' ? 'Venta' : tipo === 'compra' ? 'Compra' : 'Chatarra'} <span className="text-yellow-100">Exitosa</span>
-        </h3>
-        <p className="text-text-muted text-sm">Transacción #{id} registrada correctamente.</p>
-      </div>
-      <p className="money-value text-4xl">${safeNumber(total).toFixed(2)}</p>
-      <div className="flex gap-4 pt-8 w-full max-w-md">
-        <Button variant="secondary" onClick={() => h.cerrarModalExito()}>Cerrar</Button>
-        {tipo === 'venta' && (
-          <Button onClick={() => { h.cerrarModalExito(); navigate('/facturacion'); }} icon={<FileText size={16} />}>
-            Generar Factura
-          </Button>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const ErrorPanel = () => h.errorMsg ? (
     <div className="text-error text-xs font-black uppercase tracking-wider border-l border-error/50 bg-transparent pl-4 py-2 flex justify-between items-center">
@@ -203,7 +258,13 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
     }
 
     if (column.key === 'fecha') return <span className="cell-main">{formatearFecha(item.creado_en)}</span>;
-    if (column.key === 'tipo') return <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg ${item.tipo_operacion === 'salida' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>{item.tipo_operacion}</span>;
+    if (column.key === 'tipo') {
+      return (
+        <span className={obtenerClaseOperacionChatarra(item.tipo_operacion)}>
+          {obtenerEtiquetaOperacionChatarra(item.tipo_operacion)}
+        </span>
+      );
+    }
     if (column.key === 'producto') return <><div className="cell-main truncate">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub truncate">{item.notas || ''}</div></>;
     if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
     if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
@@ -263,7 +324,9 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
           <>
             <div className="flex justify-between items-start">
               <div>
-                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${item.tipo_operacion === 'salida' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>{item.tipo_operacion}</span>
+                <span className={obtenerClaseOperacionChatarra(item.tipo_operacion)}>
+                  {obtenerEtiquetaOperacionChatarra(item.tipo_operacion)}
+                </span>
                 <h3 className="text-white font-bold text-sm mt-2">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</h3>
                 <p className="text-[10px] text-text-muted uppercase">{formatearFecha(item.creado_en)} · {item.notas || ''}</p>
               </div>
@@ -343,8 +406,15 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
       </div>
     </div>
 
+    {/* MODAL EXITO */}
+    {h.modalExito && (h.modalVenta || h.modalCompra || h.modalChatarra) && (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 sm:p-6">
+        <ModalExito tipo={h.exitoData?.tipo} id={h.exitoData?.id} total={h.exitoData?.total} tipoOperacion={h.exitoData?.tipo_operacion} />
+      </div>
+    )}
+
     {/* MODAL VENTA */}
-    {h.modalVenta && (
+    {h.modalVenta && !h.modalExito && (
       <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/85 backdrop-blur-sm overflow-hidden">
         <div className="w-full md:max-w-5xl bg-zinc-900 border border-border-default rounded-t-2xl md:rounded-2xl max-h-[94vh] md:max-h-[88vh] overflow-y-auto overflow-x-hidden shadow-2xl animate-[slideUp_0.3s_ease-out]">
           <div className="px-5 md:px-7 py-5 border-b border-border-default flex justify-between items-center">
@@ -356,7 +426,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
           </div>
 
           {h.modalExito ? (
-            <ModalExito tipo={h.exitoData?.tipo} id={h.exitoData?.id} total={h.exitoData?.total} />
+            <ModalExito tipo={h.exitoData?.tipo} id={h.exitoData?.id} total={h.exitoData?.total} tipoOperacion={h.exitoData?.tipo_operacion} />
           ) : (
             <div className="p-5 md:p-6 space-y-5">
               <ErrorPanel />
@@ -471,7 +541,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
     )}
 
     {/* MODAL COMPRA */}
-    {h.modalCompra && (
+    {h.modalCompra && !h.modalExito && (
       <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/85 backdrop-blur-sm overflow-hidden">
         <div className="w-full md:max-w-5xl bg-zinc-900 border border-border-default rounded-t-2xl md:rounded-2xl max-h-[94vh] md:max-h-[88vh] overflow-y-auto overflow-x-hidden shadow-2xl animate-[slideUp_0.3s_ease-out]">
           <div className="px-5 md:px-7 py-5 border-b border-border-default flex justify-between items-center">
@@ -483,7 +553,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
           </div>
 
           {h.modalExito ? (
-            <ModalExito tipo={h.exitoData?.tipo} id={h.exitoData?.id} total={h.exitoData?.total} />
+            <ModalExito tipo={h.exitoData?.tipo} id={h.exitoData?.id} total={h.exitoData?.total} tipoOperacion={h.exitoData?.tipo_operacion} />
           ) : (
             <div className="p-5 md:p-6 space-y-5">
               <ErrorPanel />
@@ -555,7 +625,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
     )}
 
     {/* MODAL CHATARRA */}
-    {h.modalChatarra && (
+    {h.modalChatarra && !h.modalExito && (
       <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/85 backdrop-blur-sm overflow-hidden">
         <div className="w-full md:max-w-5xl bg-zinc-900 border border-border-default rounded-t-2xl md:rounded-2xl max-h-[94vh] md:max-h-[88vh] overflow-y-auto overflow-x-hidden shadow-2xl animate-[slideUp_0.3s_ease-out]">
           <div className="px-5 md:px-7 py-5 border-b border-border-default flex justify-between items-center">
@@ -567,7 +637,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
           </div>
 
           {h.modalExito ? (
-            <ModalExito tipo={h.exitoData?.tipo} id={h.exitoData?.id} total={h.exitoData?.total} />
+            <ModalExito tipo={h.exitoData?.tipo} id={h.exitoData?.id} total={h.exitoData?.total} tipoOperacion={h.exitoData?.tipo_operacion} />
           ) : (
             <div className="p-5 md:p-6 space-y-5">
               <ErrorPanel />
@@ -576,11 +646,11 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button type="button" onClick={() => h.setTipoChatarra('salida')}
                   className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${h.tipoChatarra === 'salida' ? 'bg-error/20 text-error border border-error/30' : 'bg-zinc-900/30 text-text-muted border border-border-default hover:text-text-muted'}`}>
-                  Salida (Venta)
+                  Venta
                 </button>
                 <button type="button" onClick={() => h.setTipoChatarra('entrada')}
                   className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${h.tipoChatarra === 'entrada' ? 'bg-success/20 text-success border border-success/30' : 'bg-zinc-900/30 text-text-muted border border-border-default hover:text-text-muted'}`}>
-                  Entrada (Compra)
+                  Compra
                 </button>
               </div>
 

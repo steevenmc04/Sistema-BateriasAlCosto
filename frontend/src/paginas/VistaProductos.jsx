@@ -14,7 +14,7 @@ import PageTitle from '../componentes/PageTitle.jsx';
 
 const VistaProductos = ({ usuario }) => {
   const {
-    tab, setTab, cargando, busqueda, setBusqueda, bFiltradas, vFiltradas,
+    tab, setTab, cargando, busqueda, setBusqueda, bFiltradas, vFiltradas, chFiltradas,
     proxVar, formBat, setFormBat, formVar, setFormVar, modalBat, modalVar,
     abrirNuevaBateria, abrirEditarBateria, guardarBateria, eliminarBateriaFn,
     abrirNuevoVario, abrirEditVario, guardarVario, eliminarVarFn, errorMsg,
@@ -40,7 +40,10 @@ const VistaProductos = ({ usuario }) => {
     paginaActual, setPaginaActual,
     elementosPorPagina, setElementosPorPagina,
     totalPaginas, itemsPaginados, totalElementos
-  } = usePaginacion(tab === 'baterias' ? bFiltradas : vFiltradas, 10);
+  } = usePaginacion(
+    tab === 'baterias' ? bFiltradas : tab === 'varios' ? vFiltradas : chFiltradas,
+    10
+  );
 
   useEffect(() => { setPaginaActual(1) }, [busqueda, tab, setPaginaActual]);
   useEffect(() => {
@@ -75,6 +78,14 @@ const VistaProductos = ({ usuario }) => {
     { key: 'acciones', label: 'Acciones', width: '120px', align: 'center', cellClassName: 'table-action-cell' },
   ]), []);
 
+  const columnasChatarra = useMemo(() => ([
+    { key: 'referencia', label: 'Referencia', width: '110px' },
+    { key: 'nombre', label: 'Producto / Operación' },
+    { key: 'cantidad', label: 'Cantidad', width: '95px', align: 'center' },
+    { key: 'precio', label: 'Total USD', width: '120px', align: 'right' },
+    { key: 'estado', label: 'Tipo', width: '145px', align: 'center' },
+  ]), []);
+
   if (!tienePermiso(usuario, 'inventario_ver')) {
     return (
       <div className="p-16 text-center font-black uppercase tracking-[0.3em] text-error text-xs">
@@ -89,8 +100,8 @@ const VistaProductos = ({ usuario }) => {
         <PageTitle
           eyebrow="Inventario"
           titleWhite="Stock de"
-          titleGold="Baterías y Otros Productos"
-          subtitle="Gestiona el inventario de baterías y productos varios."
+          titleGold="Baterías, Varios y Chatarra"
+          subtitle="Gestiona el inventario de baterías, productos varios y chatarra."
         />
 
         <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-stretch">
@@ -116,7 +127,8 @@ const VistaProductos = ({ usuario }) => {
 
           <div className="tab-group">
             <button type="button" onClick={() => setTab('baterias')} className={`tab-item ${tab === 'baterias' ? 'tab-item-active' : 'tab-item-inactive'}`}>Baterías</button>
-            <button type="button" onClick={() => setTab('varios')} className={`tab-item ${tab === 'varios' ? 'tab-item-active' : 'tab-item-inactive'}`}>Otros productos</button>
+            <button type="button" onClick={() => setTab('varios')} className={`tab-item ${tab === 'varios' ? 'tab-item-active' : 'tab-item-inactive'}`}>Varios</button>
+            <button type="button" onClick={() => setTab('chatarra')} className={`tab-item ${tab === 'chatarra' ? 'tab-item-active' : 'tab-item-inactive'}`}>Chatarra</button>
           </div>
 
           {tab === 'baterias' && puedeCrear && (
@@ -136,7 +148,7 @@ const VistaProductos = ({ usuario }) => {
         {/* DESKTOP TABLE */}
         <div className="hidden md:block">
           <TablePremium
-            columns={tab === 'baterias' ? columnasBaterias : columnasVarios}
+            columns={tab === 'baterias' ? columnasBaterias : tab === 'varios' ? columnasVarios : columnasChatarra}
             data={itemsPaginados}
             rowKey={(row) => row.id}
             loading={cargando}
@@ -175,20 +187,60 @@ const VistaProductos = ({ usuario }) => {
                 return null;
               }
 
+              if (tab === 'varios') {
+                if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
+                if (column.key === 'nombre') return (
+                  <div className="max-w-[340px]">
+                    <div className="cell-main">{row.nombre}</div>
+                    <div className="cell-sub">{row.descripcion}</div>
+                  </div>
+                );
+                if (column.key === 'cantidad') return <span className="cell-main">{row.cantidad}</span>;
+                if (column.key === 'precio') return <span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span>;
+                if (column.key === 'acciones') {
+                  return (
+                    <div className="action-cell">
+                      {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="action-btn action-btn-text">Editar</button>}
+                      {puedeEliminar && <button type="button" onClick={() => eliminarVarFn(row.id)} className="action-btn action-btn-icon delete-btn"><Trash2 size={16} /></button>}
+                    </div>
+                  );
+                }
+                return null;
+              }
+
               if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
-              if (column.key === 'nombre') return (
-                <div className="max-w-[340px]">
-                  <div className="cell-main">{row.nombre}</div>
-                  <div className="cell-sub">{row.descripcion}</div>
-                </div>
-              );
+              if (column.key === 'nombre') {
+                return (
+                  <div className="max-w-[340px]">
+                    <div className="cell-main">
+                      {row.nombre}
+                      {row.tipo_operacion ? (
+                        <span className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wide ${row.tipo_operacion === 'entrada' ? 'badge-operation-buy' : 'badge-operation-sale'}`}>
+                          {row.tipo_operacion === 'entrada' ? 'Compra' : 'Venta'}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="cell-sub">{row.descripcion}</div>
+                  </div>
+                );
+              }
               if (column.key === 'cantidad') return <span className="cell-main">{row.cantidad}</span>;
               if (column.key === 'precio') return <span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span>;
-              if (column.key === 'acciones') {
+              if (column.key === 'estado') {
+                if (!row.tipo_operacion) {
+                  return (
+                    <div className="action-cell">
+                      <Badge cantidad={row.cantidad} size="md">
+                        {row.estado_stock === 'sin_stock' ? 'Sin stock' : row.cantidad <= 5 ? 'Stock bajo' : 'Con stock'}
+                      </Badge>
+                    </div>
+                  );
+                }
                 return (
                   <div className="action-cell">
-                    {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="action-btn action-btn-text">Editar</button>}
-                    {puedeEliminar && <button type="button" onClick={() => eliminarVarFn(row.id)} className="action-btn action-btn-icon delete-btn"><Trash2 size={16} /></button>}
+                    <span className={row.tipo_operacion === 'entrada' ? 'badge-operation-buy' : 'badge-operation-sale'}>
+                      {row.tipo_operacion === 'entrada' ? 'Compra' : 'Venta'}
+                    </span>
                   </div>
                 );
               }
@@ -238,7 +290,7 @@ const VistaProductos = ({ usuario }) => {
                 </div>
               </div>
             ))
-          ) : (
+          ) : tab === 'varios' ? (
             itemsPaginados.map((row) => (
                <div key={row.id} className="item-card card-premium p-4">
                 <div className="flex justify-between items-start">
@@ -261,6 +313,35 @@ const VistaProductos = ({ usuario }) => {
                 <div className="grid grid-cols-2 gap-3 pt-2">
                    {puedeEditar && <button onClick={() => abrirEditVario(row)} className="w-full px-4 py-2 font-black uppercase tracking-wide rounded-xl bg-black border border-border-default text-accent hover:bg-yellow-500/10 transition-all justify-center">Editar</button>}
                    {puedeEliminar && <button onClick={() => eliminarVarFn(row.id)} className="w-full p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 transition-all justify-center"><Trash2 size={14} /></button>}
+                </div>
+              </div>
+            ))
+          ) : (
+            itemsPaginados.map((row) => (
+              <div key={row.id} className="item-card card-premium p-4">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <p className="text-accent font-black text-sm uppercase tracking-wider font-mono">{row.codigo}</p>
+                    <h3 className="text-text-primary font-bold text-lg truncate">{row.nombre}</h3>
+                    <p className="text-[10px] text-text-muted uppercase tracking-widest truncate">{row.descripcion}</p>
+                  </div>
+                  {row.tipo_operacion ? (
+                    <span className={row.tipo_operacion === 'entrada' ? 'badge-operation-buy' : 'badge-operation-sale'}>
+                      {row.tipo_operacion === 'entrada' ? 'Compra' : 'Venta'}
+                    </span>
+                  ) : (
+                    <Badge cantidad={row.cantidad} size="sm">{row.estado_stock === 'sin_stock' ? 'Sin stock' : row.cantidad <= 5 ? 'Stock bajo' : 'Con stock'}</Badge>
+                  )}
+                </div>
+                <div className="flex justify-between items-end border-t border-border-default pt-4">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black text-text-muted uppercase tracking-widest">Cantidad</span>
+                    <span className="text-text-primary font-black text-xl">{row.cantidad}</span>
+                  </div>
+                  <div className="flex flex-col text-right">
+                    <span className="text-[9px] font-black text-text-muted uppercase tracking-widest">Total</span>
+                    <span className="money-value text-xl">${safeNumber(row.precio).toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             ))

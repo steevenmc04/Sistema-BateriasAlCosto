@@ -3,6 +3,25 @@ import { Search, X, ChevronDown } from 'lucide-react';
 import { safeNumber } from '../utilidades/safeNumber.js';
 import { esProductoBateria } from '../utilidades/esProductoBateria.js';
 
+const normalizarProductoPOS = (p = {}) => {
+  const stock = safeNumber(p.stock ?? p.stock_actual ?? p.cantidad_disponible ?? p.cantidad ?? 0);
+  const precio = safeNumber(p.precio ?? p.precio_venta ?? p.pvp ?? p.precio_costo ?? 0);
+  const id = Number(p.id ?? p.producto_id ?? 0) || null;
+  return {
+    ...p,
+    id,
+    producto_id: id,
+    codigo: p.codigo ?? p.referencia ?? '',
+    nombre: p.nombre ?? p.descripcion ?? '',
+    marca: p.marca ?? p.nombre ?? '',
+    tipo_caja: p.tipo_caja ?? '',
+    stock,
+    stock_actual: stock,
+    precio_venta: precio,
+    precio,
+  };
+};
+
 export default function BuscadorProductoPOS({
   productos = [],
   onSelect = () => {},
@@ -19,10 +38,12 @@ export default function BuscadorProductoPOS({
 
   const filtered = useMemo(() => {
     const q = searchText.trim().toLowerCase();
+    const normalizados = (productos || []).map(normalizarProductoPOS);
+
     // base list (apply mode filter first)
-    let base = productos;
-    if (mode === 'varios') base = productos.filter((p) => !esProductoBateria(p));
-    if (mode === 'bateria') base = productos.filter((p) => esProductoBateria(p));
+    let base = normalizados;
+    if (mode === 'varios') base = normalizados.filter((p) => !esProductoBateria(p));
+    if (mode === 'bateria') base = normalizados.filter((p) => esProductoBateria(p));
     if (!q) return base.slice(0, 10);
     return base
       .filter(p => {
@@ -136,10 +157,10 @@ export default function BuscadorProductoPOS({
               >
                 <div className="flex items-center gap-2 justify-between">
                   <span className="text-[11px] font-black uppercase tracking-wider text-accent">
-                    [{producto.codigo}]
+                    [{producto.codigo || '-'}]
                   </span>
                   <span className="money-value">
-                    ${safeNumber(producto.precio_venta).toFixed(2)}
+                    ${safeNumber(producto.precio ?? producto.precio_venta).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-text-muted">
@@ -149,7 +170,7 @@ export default function BuscadorProductoPOS({
                 </div>
                 <div className="flex items-center justify-between text-[10px] text-text-muted">
                   <span>{producto.nombre || 'Sin nombre'}</span>
-                  <span className="font-bold">Stock: {producto.stock_actual || 0}</span>
+                  <span className="font-bold">Stock: {producto.stock_actual ?? producto.stock ?? 0}</span>
                 </div>
               </button>
             ))}

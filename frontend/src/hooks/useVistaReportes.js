@@ -1,90 +1,116 @@
 import { useState, useCallback } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import apiCliente, { apiUrl, informesAPI } from '../servicios/servicios.js';
+import { informesAPI } from '../servicios/servicios.js';
 import { safeNumber } from '../utilidades/safeNumber.js';
 
-const loadBase64Image = (url) => {
-  return new Promise((resolve, reject) => {
-    // Timeout to prevent hanging
-    const timeoutId = setTimeout(() => {
-      reject(new Error('Timeout loading image'));
-    }, 5000);
+const OPCIONES_TIPO_REPORTE = [
+  { label: 'Ventas (Todas)', value: 'ventas_todas' },
+  { label: 'Venta Baterías', value: 'venta_baterias' },
+  { label: 'Venta Varios', value: 'venta_varios' },
+  { label: 'Venta Chatarra', value: 'venta_chatarra' },
+  { label: 'Compras (Todas)', value: 'compras_todas' },
+  { label: 'Compra Baterías', value: 'compra_baterias' },
+  { label: 'Compra Varios', value: 'compra_varios' },
+  { label: 'Compra Chatarra', value: 'compra_chatarra' },
+  { label: 'Inventario Actual', value: 'inventario_actual' },
+];
 
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    
-    img.onload = () => {
-      clearTimeout(timeoutId);
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        const dataURL = canvas.toDataURL('image/png');
-        resolve({ dataURL, width: img.width, height: img.height });
-      } catch (e) {
-        clearTimeout(timeoutId);
-        reject(e);
-      }
-    };
-    
-    img.onerror = (e) => {
-      clearTimeout(timeoutId);
-      reject(new Error(`Failed to load image: ${url}`));
-    };
-    
-    try {
-      img.src = url;
-    } catch (e) {
-      clearTimeout(timeoutId);
-      reject(e);
-    }
-  });
+const tituloPorTipo = Object.fromEntries(OPCIONES_TIPO_REPORTE.map((o) => [o.value, o.label]));
+
+const obtenerFechaMovimiento = (item = {}) => {
+  return (
+    item.fecha ||
+    item.creado_en ||
+    item.created_at ||
+    item.fecha_venta ||
+    item.fecha_compra ||
+    item.fecha_operacion ||
+    item.actualizado_en ||
+    item.fecha_ref ||
+    null
+  );
 };
 
-const formatearFecha = (f) => {
-  if (!f) return '-';
-  try {
-    const d = new Date(f);
-    if (isNaN(d.getTime())) return String(f);
-    return d.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch (e) {
-    return String(f);
+const estaEnRango = (item, fechaInicio, fechaFin) => {
+  const fecha = obtenerFechaMovimiento(item);
+  if (!fecha) return false;
+
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return false;
+
+  const inicio = fechaInicio ? new Date(fechaInicio) : null;
+  const fin = fechaFin ? new Date(fechaFin) : null;
+
+  if (inicio && d < inicio) return false;
+  if (fin) {
+    fin.setHours(23, 59, 59, 999);
+    if (d > fin) return false;
   }
+  return true;
 };
 
-const obtenerCodigoBateria = (r) => {
-  if (r.notas) {
-    const match = r.notas.match(/Ref\.\sfísica\/SRI:\s*([^|]+)/);
-    if (match && match[1]) {
-      return match[1].trim();
-    }
-  }
-  return r.codigo_item || '-';
+const esBateria = (item = {}) => {
+  const texto = [
+    item.categoria,
+    item.tipo_producto,
+    item.tipo,
+    item.nombre_categoria,
+    item.descripcion,
+    item.tipo_caja,
+    item.marca,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    item.es_bateria === true ||
+    texto.includes('bateria') ||
+    texto.includes('batería') ||
+    Boolean(item.tipo_caja)
+  );
 };
 
-function inicioDia(d) {
+const esChatarra = (item = {}) => {
+  const texto = [
+    item.categoria,
+    item.tipo_producto,
+    item.tipo,
+    item.tipo_operacion,
+    item.descripcion,
+    item.nombre,
+    item.clase,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return texto.includes('chatarra');
+};
+
+const esVario = (item = {}) => !esBateria(item) && !esChatarra(item);
+
+const inicioDia = (d) => {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
-}
+};
 
-function finDia(d) {
+const finDia = (d) => {
   const x = new Date(d);
   x.setHours(23, 59, 59, 999);
   return x;
-}
+};
 
-function fmtInput(d) {
+const fmtInput = (d) => {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
+};
 
-function aplicarRango(tipo) {
+const aplicarRango = (tipo) => {
   const hoy = inicioDia(new Date());
   if (tipo === 'hoy') return { desde: hoy, hasta: finDia(hoy) };
   if (tipo === 'semana') {
@@ -102,13 +128,132 @@ function aplicarRango(tipo) {
     return { desde: inicioDia(primer), hasta: finDia(ultimo) };
   }
   return { desde: hoy, hasta: finDia(hoy) };
-}
+};
 
-/**
- * Reportes leyendo `/api/informes/:tipo` con filtros de fecha (MySQL).
- */
+const formatearFecha = (f) => {
+  if (!f) return '-';
+  try {
+    const d = new Date(f);
+    if (Number.isNaN(d.getTime())) return String(f);
+    return d.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return String(f);
+  }
+};
+
+const obtenerCodigoManual = (r = {}) => {
+  if (r.notas) {
+    const match = String(r.notas).match(/Ref\.\sfísica\/SRI:\s*([^|]+)/i);
+    if (match && match[1]) return match[1].trim();
+  }
+  return r.codigo_bateria || r.codigo_item || r.codigo || r.ref || '-';
+};
+
+const normalizarVenta = (item = {}) => {
+  const categoriaMovimiento = esBateria(item) || String(item.tipo || '').toLowerCase() === 'bateria'
+    ? 'bateria'
+    : 'varios';
+
+  return {
+    id: `venta-${item.id ?? item.codigo_item ?? Math.random().toString(36).slice(2)}`,
+    fecha: obtenerFechaMovimiento(item),
+    tipoMovimiento: categoriaMovimiento === 'bateria' ? 'Venta Batería' : 'Venta Varios',
+    categoriaMovimiento,
+    codigo: obtenerCodigoManual(item),
+    producto: [item.marca, item.tipo_caja, item.condicion].filter(Boolean).join(' · ') || item.codigo_item || 'Producto',
+    clienteProveedor: item.nombre_cliente || 'Consumidor Final',
+    usuario: item.usuario_nombre || '-',
+    cantidad: safeNumber(item.cantidad),
+    total: safeNumber(item.total),
+    iva: safeNumber(item.con_iva) === 1 ? 'Con IVA' : 'Sin IVA',
+    origen: 'ventas',
+    operacion: 'venta',
+  };
+};
+
+const normalizarCompra = (item = {}) => {
+  const categoriaMovimiento = esBateria(item) ? 'bateria' : esVario(item) ? 'varios' : 'varios';
+
+  return {
+    id: `compra-${item.id ?? item.codigo_item ?? Math.random().toString(36).slice(2)}`,
+    fecha: obtenerFechaMovimiento(item),
+    tipoMovimiento: categoriaMovimiento === 'bateria' ? 'Compra Batería' : 'Compra Varios',
+    categoriaMovimiento,
+    codigo: obtenerCodigoManual(item),
+    producto: [item.marca, item.tipo_caja, item.condicion].filter(Boolean).join(' · ') || item.codigo_item || 'Producto',
+    clienteProveedor: item.proveedor || '-',
+    usuario: item.usuario_nombre || '-',
+    cantidad: safeNumber(item.cantidad),
+    total: safeNumber(item.total),
+    iva: 'Sin IVA',
+    origen: 'compras',
+    operacion: 'compra',
+  };
+};
+
+const normalizarChatarra = (item = {}) => {
+  const tipoOperacion = String(item.tipo_operacion || '').toLowerCase();
+  const esEntrada = tipoOperacion === 'entrada' || tipoOperacion === 'compra';
+
+  return {
+    id: `chatarra-${item.id ?? item.codigo_item ?? Math.random().toString(36).slice(2)}`,
+    fecha: obtenerFechaMovimiento(item),
+    tipoMovimiento: esEntrada ? 'Compra Chatarra' : 'Venta Chatarra',
+    categoriaMovimiento: 'chatarra',
+    codigo: obtenerCodigoManual(item),
+    producto: [item.marca, item.tipo_caja].filter(Boolean).join(' · ') || item.tipo_caja || 'Chatarra',
+    clienteProveedor: item.nombre_cliente_proveedor || '-',
+    usuario: item.usuario_nombre || '-',
+    cantidad: safeNumber(item.cantidad),
+    total: safeNumber(item.total),
+    iva: 'Sin IVA',
+    origen: 'chatarra',
+    operacion: esEntrada ? 'compra' : 'venta',
+  };
+};
+
+const normalizarInventario = (item = {}) => {
+  const total = safeNumber(item.cantidad) * safeNumber(item.precio);
+  const categoriaMovimiento = esChatarra(item)
+    ? 'chatarra'
+    : esBateria(item)
+      ? 'bateria'
+      : 'varios';
+
+  const tipoMovimiento =
+    categoriaMovimiento === 'chatarra'
+      ? 'Inventario Chatarra'
+      : categoriaMovimiento === 'bateria'
+        ? 'Inventario Batería'
+        : 'Inventario Varios';
+
+  return {
+    id: `inv-${item.ref ?? item.codigo ?? Math.random().toString(36).slice(2)}`,
+    fecha: obtenerFechaMovimiento(item),
+    tipoMovimiento,
+    categoriaMovimiento,
+    codigo: item.ref || item.codigo || '-',
+    producto: [item.marca, item.tipo_caja, item.condicion].filter(Boolean).join(' · ') || item.nombre || 'Inventario',
+    clienteProveedor: '-',
+    usuario: '-',
+    cantidad: safeNumber(item.cantidad),
+    total,
+    iva: '-',
+    origen: 'inventario',
+    operacion: 'inventario',
+    estado_stock: item.estado_stock,
+  };
+};
+
+const ordenarPorFechaDesc = (arr = []) =>
+  [...arr].sort((a, b) => {
+    const da = new Date(a.fecha || 0).getTime();
+    const db = new Date(b.fecha || 0).getTime();
+    return db - da;
+  });
+
 export function useVistaReportes() {
-  const [tipo, setTipo] = useState('ventas');
+  const [tipo, setTipo] = useState('ventas_todas');
   const rangoInicial = aplicarRango('mes');
   const [rangoRapido, setRangoRapido] = useState('mes');
   const [desde, setDesde] = useState(fmtInput(rangoInicial.desde));
@@ -129,17 +274,61 @@ export function useVistaReportes() {
     setError('');
     setCargando(true);
     try {
-      if (tipo === 'inventario') {
+      if (tipo === 'inventario_actual') {
         const { data } = await informesAPI.obtener('inventario', {});
-        setRegistros(data.registros || []);
-        setTotales(data.totales || null);
+        const inventario = (data.registros || []).map(normalizarInventario);
+        const totalCantidad = inventario.reduce((ac, r) => ac + safeNumber(r.cantidad), 0);
+        const totalMonto = inventario.reduce((ac, r) => ac + safeNumber(r.total), 0);
+
+        setRegistros(inventario);
+        setTotales({
+          cantidad: totalCantidad,
+          cantidad_unidades: totalCantidad,
+          monto_usd: Number(totalMonto.toFixed(2)),
+        });
         return;
       }
-      const { data } = await informesAPI.obtener(tipo, { desde, hasta });
-      setRegistros(data.registros || []);
-      setTotales(data.totales || null);
+
+      const [ventasRes, comprasRes, chatarraRes] = await Promise.all([
+        informesAPI.obtener('ventas', { desde, hasta }),
+        informesAPI.obtener('compras', { desde, hasta }),
+        informesAPI.obtener('chatarra', { desde, hasta }),
+      ]);
+
+      const ventas = (ventasRes.data?.registros || []).map(normalizarVenta).filter((r) => estaEnRango(r, desde, hasta));
+      const compras = (comprasRes.data?.registros || []).map(normalizarCompra).filter((r) => estaEnRango(r, desde, hasta));
+      const chatarra = (chatarraRes.data?.registros || []).map(normalizarChatarra).filter((r) => estaEnRango(r, desde, hasta));
+
+      let filtrados = [];
+      if (tipo === 'ventas_todas') {
+        filtrados = [...ventas, ...chatarra.filter((r) => r.operacion === 'venta')];
+      } else if (tipo === 'venta_baterias') {
+        filtrados = ventas.filter((r) => r.categoriaMovimiento === 'bateria');
+      } else if (tipo === 'venta_varios') {
+        filtrados = ventas.filter((r) => r.categoriaMovimiento === 'varios');
+      } else if (tipo === 'venta_chatarra') {
+        filtrados = chatarra.filter((r) => r.operacion === 'venta');
+      } else if (tipo === 'compras_todas') {
+        filtrados = [...compras, ...chatarra.filter((r) => r.operacion === 'compra')];
+      } else if (tipo === 'compra_baterias') {
+        filtrados = compras.filter((r) => r.categoriaMovimiento === 'bateria');
+      } else if (tipo === 'compra_varios') {
+        filtrados = compras.filter((r) => r.categoriaMovimiento === 'varios');
+      } else if (tipo === 'compra_chatarra') {
+        filtrados = chatarra.filter((r) => r.operacion === 'compra');
+      }
+
+      const ordenados = ordenarPorFechaDesc(filtrados);
+      const totalCantidad = ordenados.reduce((ac, r) => ac + safeNumber(r.cantidad), 0);
+      const totalMonto = ordenados.reduce((ac, r) => ac + safeNumber(r.total), 0);
+
+      setRegistros(ordenados);
+      setTotales({
+        cantidad: totalCantidad,
+        monto_usd: Number(totalMonto.toFixed(2)),
+      });
     } catch (e) {
-      setError(e.response?.data?.mensaje || e.message);
+      setError(e.response?.data?.mensaje || e.message || 'No se pudo cargar reportes');
     } finally {
       setCargando(false);
     }
@@ -148,322 +337,59 @@ export function useVistaReportes() {
   const generarPDF = async (puedePdf) => {
     if (!puedePdf) return;
     setError('');
-    setCargando(true);
     try {
-      const params = tipo === 'inventario' ? {} : { desde, hasta };
-      const { data } = await informesAPI.obtener(tipo, params);
-      const rows = data.registros || [];
-      const tot = data.totales || {};
-
-// 1. Obtener Datos de la Empresa
-       let empresa = {
-         ruc: '0917688871001',
-         direccion: 'Carchi #1936 y Ayacucho',
-         telefono: '0999999999',
-         email: 'info@bateriasalcosto.com'
-       };
-      try {
-        const { data: config } = await apiCliente.get(apiUrl('/api/facturas/config'));
-        if (config && config.ruc) {
-          empresa = config;
-        }
-      } catch (e) {
-        console.warn('Usando valores de empresa por defecto:', e);
-      }
-
-      // 2. Intentar Cargar Logo (Primero logoParaFactura, luego logo)
-      let logoInfo = null;
-      try {
-        logoInfo = await loadBase64Image(import.meta.env.BASE_URL + 'logoParaFactura.png');
-      } catch (e) {
-        try {
-          logoInfo = await loadBase64Image(import.meta.env.BASE_URL + 'logo.png');
-        } catch (err) {
-          console.error("No se pudo cargar ningún logo:", err);
-        }
-      }
-
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-
-      // COLORES Y ESTILOS
-      const colorPrincipal = [15, 23, 42]; // #0f172a (dark-900)
-      const colorSecundario = [71, 85, 105]; // #475569 (slate-600)
-      const colorAcento = [234, 179, 8]; // #eab308 (yellow-500)
-
-      // 3. LOGO Y ENCABEZADO
-      if (logoInfo) {
-        const targetWidth = 140;
-        const targetHeight = targetWidth * (logoInfo.height / logoInfo.width);
-        doc.addImage(logoInfo.dataURL, 'PNG', 50, 45, targetWidth, targetHeight);
-      } else {
-        doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(22);
-        doc.setTextColor(colorAcento[0], colorAcento[1], colorAcento[2]);
-        doc.text('BATERÍAS AL COSTO', 50, 70);
-      }
-
-      // DATOS DE LA EMPRESA
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(colorSecundario[0], colorSecundario[1], colorSecundario[2]);
-      doc.text(`RUC: ${empresa.ruc}`, 50, 140);
-      doc.text(empresa.direccion, 50, 152);
-      doc.text(`Tel: ${empresa.telefono || ''} · ${empresa.email || ''}`, 50, 164);
-
-      // CUADRO DE REPORTE (Derecha arriba)
-      doc.setFillColor(248, 250, 252);
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(1);
-      doc.roundedRect(380, 45, 165, 80, 4, 4, 'FD');
-
-      doc.setFont('Helvetica', 'bold');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text(`Reporte: ${tituloPorTipo[tipo] || tipo}`, 40, 42);
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      doc.setTextColor(colorSecundario[0], colorSecundario[1], colorSecundario[2]);
-      doc.text(`REPORTE DE ${tipo.toUpperCase()}`, 380 + 165 / 2, 60, { align: 'center' });
+      doc.text(
+        tipo === 'inventario_actual'
+          ? 'Rango: Inventario actual'
+          : `Rango: ${desde} a ${hasta}`,
+        40,
+        60
+      );
 
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.setTextColor(colorPrincipal[0], colorPrincipal[1], colorPrincipal[2]);
-      
-      let shortTitle = '';
-      if (tipo === 'ventas') shortTitle = 'VENTAS';
-      else if (tipo === 'compras') shortTitle = 'COMPRAS';
-      else if (tipo === 'chatarra') shortTitle = 'CHATARRA';
-      else if (tipo === 'inventario') shortTitle = 'STOCK';
-      
-      doc.text(shortTitle, 380 + 165 / 2, 78, { align: 'center' });
-
-      const fechaHoy = new Date().toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(colorSecundario[0], colorSecundario[1], colorSecundario[2]);
-      doc.text(`Emisión: ${fechaHoy}`, 380 + 165 / 2, 102, { align: 'center' });
-
-      // LÍNEA DE ACENTO (AMARILLO)
-      doc.setFillColor(colorAcento[0], colorAcento[1], colorAcento[2]);
-      doc.rect(50, 185, 495, 2, 'F');
-
-      // DATOS DEL REPORTE
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(colorPrincipal[0], colorPrincipal[1], colorPrincipal[2]);
-      doc.text('DATOS DEL REPORTE', 50, 210);
-
-      doc.setFont('Helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(colorPrincipal[0], colorPrincipal[1], colorPrincipal[2]);
-      
-      let curY = 225;
-      if (tipo === 'inventario') {
-        doc.text('Rango: Inventario en tiempo real (sin filtro de fecha)', 50, curY);
-      } else {
-        doc.text(`Rango de fechas: Desde ${desde} hasta ${hasta}`, 50, curY);
-      }
-      curY += 13;
-      doc.text(`Generado: ${new Date().toLocaleString('es-EC')}`, 50, curY);
-      curY += 13;
-      doc.text(`Total registros: ${rows.length}`, 50, curY);
-
-       const head =
-         tipo === 'ventas'
-           ? [['Fecha', 'Tipo', 'Código', 'Cliente', 'Vendido por', 'Cant.', 'PU USD', 'Costo USD', 'IVA?', 'Total USD']]
-           : tipo === 'compras'
-             ? [['Fecha', 'Marca', 'Tipo Caja', 'Condición', 'Cant.', 'Costo Unit.', 'Total USD', 'Proveedor']]
-             : tipo === 'chatarra'
-               ? [['Fecha', 'Operación', 'Tipo Caja', 'Cant.', 'P. Unitario', 'Total USD', 'Contraparte']]
-               : [['Clase', 'Referencia', 'Marca', 'Tipo Caja', 'Condición', 'Stock', 'Costo USD', 'PVP Sugerido', 'Valorizado USD']];
-
-       const body =
-         tipo === 'ventas'
-           ? rows.map((r) => [
-               formatearFecha(r.fecha),
-               r.tipo ? String(r.tipo).toUpperCase() : '-',
-               obtenerCodigoBateria(r),
-               r.nombre_cliente,
-               r.usuario_nombre || '-',
-               r.cantidad,
-               safeNumber(r.precio_unitario).toFixed(2),
-               safeNumber(r.costo_unitario || 0).toFixed(2),
-               safeNumber(r.con_iva) === 1 ? 'Con IVA' : 'Sin IVA',
-               safeNumber(r.total).toFixed(2),
-             ])
-           : tipo === 'compras'
-             ? rows.map((r) => [
-                 formatearFecha(r.fecha),
-                 r.marca,
-                 r.tipo_caja,
-                 r.condicion,
-                 r.cantidad,
-                 safeNumber(r.precio_unitario).toFixed(2),
-                 safeNumber(r.total).toFixed(2),
-                 r.proveedor || '-',
-               ])
-             : tipo === 'chatarra'
-               ? rows.map((r) => [
-                   formatearFecha(r.fecha),
-                   r.tipo_operacion ? String(r.tipo_operacion).toUpperCase() : '-',
-                   r.tipo_caja,
-                   r.cantidad,
-                   safeNumber(r.precio_unitario).toFixed(2),
-                   safeNumber(r.total).toFixed(2),
-                   r.nombre_cliente_proveedor || '-',
-                 ])
-               : rows.map((r) => [
-                   r.clase ? String(r.clase).toUpperCase() : '-',
-                   r.ref,
-                   r.marca,
-                   r.tipo_caja || '-',
-                   r.condicion || '-',
-                   r.cantidad,
-                   safeNumber(r.precio).toFixed(2),
-                   safeNumber(r.precio_venta_sugerido || 0).toFixed(2),
-                   safeNumber(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2),
-                 ]);
+      const head = [['Fecha', 'Tipo', 'Código', 'Producto', 'Cliente / Proveedor', 'Cant.', 'IVA?', 'Total USD']];
+      const body = (registros || []).map((r) => [
+        formatearFecha(r.fecha),
+        r.tipoMovimiento || '-',
+        r.codigo || '-',
+        r.producto || '-',
+        r.clienteProveedor || '-',
+        String(safeNumber(r.cantidad)),
+        r.iva || '-',
+        safeNumber(r.total).toFixed(2),
+      ]);
 
       autoTable(doc, {
-        startY: 275,
+        startY: 78,
         head,
         body,
-        styles: {
-          fontSize: 8,
-          cellPadding: 6,
-          valign: 'middle',
-        },
-        headStyles: {
-          fillColor: [15, 23, 42],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252],
-        },
+        styles: { fontSize: 8, cellPadding: 5, valign: 'middle' },
+        headStyles: { fillColor: [16, 16, 16], textColor: [227, 198, 106], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
       });
 
-      let finalY = doc.lastAutoTable?.finalY || 275;
-      finalY += 20;
+      const finalY = doc.lastAutoTable?.finalY || 78;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(`Total unidades: ${safeNumber(totales?.cantidad).toFixed(0)}`, 40, finalY + 22);
+      doc.text(`Total USD: ${safeNumber(totales?.monto_usd).toFixed(2)}`, 200, finalY + 22);
 
-      // Si está muy cerca del final, añadimos una página
-      if (finalY > 700) {
-        doc.addPage();
-        finalY = 50;
-      }
-
-      // Dibujar caja de TOTALES en la parte inferior derecha
-      const tieneTotales = tot?.monto_usd != null || tot?.cantidad != null || tot?.cantidad_unidades != null || tot?.margen_usd != null;
-      if (tieneTotales) {
-        let totalLinesCount = 0;
-        if (tot?.cantidad_unidades != null) totalLinesCount++;
-        if (tot?.cantidad != null) totalLinesCount++;
-        if (tot?.monto_usd != null) totalLinesCount++;
-        if (tot?.costo_usd != null) totalLinesCount++;
-        if (tot?.margen_usd != null) totalLinesCount++;
-        if (tot?.margen_porcentaje != null) totalLinesCount++;
-        if (tot?.promedio_diario != null) totalLinesCount++;
-
-        const cardH = 20 + totalLinesCount * 22;
-        const cardW = 245;
-        const cardX = 300; // Lado derecho
-
-        doc.setFillColor(249, 250, 251);
-        doc.setDrawColor(226, 232, 240);
-        doc.setLineWidth(1);
-        doc.roundedRect(cardX, finalY, cardW, cardH, 8, 8, 'FD');
-
-        doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(71, 85, 105);
-
-        let yText = finalY + 20;
-
-        if (tot?.cantidad_unidades != null) {
-          doc.setFont('Helvetica', 'normal');
-          doc.text('Total Unidades Inventario:', cardX + 15, yText);
-          doc.setFont('Helvetica', 'bold');
-          doc.text(String(tot.cantidad_unidades), cardX + cardW - 15, yText, { align: 'right' });
-          yText += 22;
-        }
-
-        if (tot?.cantidad != null) {
-          doc.setFont('Helvetica', 'normal');
-          doc.text('Total Unidades:', cardX + 15, yText);
-          doc.setFont('Helvetica', 'bold');
-          doc.text(String(tot.cantidad), cardX + cardW - 15, yText, { align: 'right' });
-          yText += 22;
-        }
-
-        if (tot?.monto_usd != null) {
-          doc.setFont('Helvetica', 'normal');
-          doc.text('Total Monto USD:', cardX + 15, yText);
-          doc.setFont('Helvetica', 'bold');
-          doc.setTextColor(15, 23, 42);
-          doc.setFontSize(11);
-          doc.text(`$${safeNumber(tot.monto_usd).toFixed(2)}`, cardX + cardW - 15, yText, { align: 'right' });
-          doc.setFontSize(10);
-          doc.setTextColor(71, 85, 105);
-          yText += 22;
-        }
-
-        if (tot?.costo_usd != null) {
-          doc.setFont('Helvetica', 'normal');
-          doc.text('Costo Total USD:', cardX + 15, yText);
-          doc.setFont('Helvetica', 'bold');
-          doc.setTextColor(100, 116, 139);
-          doc.text(`$${safeNumber(tot.costo_usd).toFixed(2)}`, cardX + cardW - 15, yText, { align: 'right' });
-          doc.setTextColor(71, 85, 105);
-          yText += 22;
-        }
-
-        if (tot?.margen_usd != null) {
-          doc.setFont('Helvetica', 'normal');
-          doc.text('Total Margen USD:', cardX + 15, yText);
-          doc.setFont('Helvetica', 'bold');
-          doc.setTextColor(16, 185, 129); // green color
-          doc.text(`+$${safeNumber(tot.margen_usd).toFixed(2)}`, cardX + cardW - 15, yText, { align: 'right' });
-          doc.setTextColor(71, 85, 105);
-          yText += 22;
-        }
-
-        if (tot?.margen_porcentaje != null) {
-          doc.setFont('Helvetica', 'normal');
-          doc.text('Margen Promedio:', cardX + 15, yText);
-          doc.setFont('Helvetica', 'bold');
-          doc.text(`${safeNumber(tot.margen_porcentaje).toFixed(1)}%`, cardX + cardW - 15, yText, { align: 'right' });
-          yText += 22;
-        }
-
-        if (tot?.promedio_diario != null) {
-          doc.setFont('Helvetica', 'normal');
-          doc.text('Promedio Diario USD:', cardX + 15, yText);
-          doc.setFont('Helvetica', 'bold');
-          doc.text(`$${safeNumber(tot.promedio_diario).toFixed(2)}`, cardX + cardW - 15, yText, { align: 'right' });
-          yText += 22;
-        }
-      }
-
-      // Numeración de páginas en el pie de página
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(156, 163, 175);
-        doc.text('Generado por Sistema Baterías al Costo', 595.28 / 2, 815, { align: 'center' });
-        doc.text(`Página ${i} de ${pageCount}`, 595.28 - 50, 815, { align: 'right' });
-      }
-
-      const nombreTipo = { ventas: 'Ventas', ventas_bateria: 'Ventas_Bateria', ventas_varios: 'Ventas_Varios', compras: 'Compras', chatarra: 'Chatarra', inventario: 'Inventario' }[tipo] || tipo;
-      const periodo = tipo === 'inventario' ? new Date().toISOString().split('T')[0] : `${desde}_a_${hasta}`;
-      doc.save(`Reporte_${nombreTipo}_${periodo}.pdf`);
+      const nombre = (tituloPorTipo[tipo] || tipo).replace(/\s+/g, '_');
+      doc.save(`Reporte_${nombre}_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (e) {
-      setError(e.response?.data?.mensaje || e.message);
-    } finally {
-      setCargando(false);
+      setError(e.message || 'No se pudo generar PDF');
     }
   };
 
   return {
     tipo,
     setTipo,
+    opcionesTipoReporte: OPCIONES_TIPO_REPORTE,
     rangoRapido,
     desde,
     setDesde,
@@ -476,5 +402,6 @@ export function useVistaReportes() {
     error,
     refrescarVista,
     generarPDF,
+    formatearFecha,
   };
 }
