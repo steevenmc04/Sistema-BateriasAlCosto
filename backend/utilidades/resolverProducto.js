@@ -1,6 +1,7 @@
 import pool from '../configuracion/baseDeDatos.js';
 
 const TIPOS_VALIDOS = new Set(['bateria', 'varios', 'chatarra']);
+let cacheTieneColumnaTipo = null;
 
 const normalizar = (valor) => String(valor || '').trim().toLowerCase();
 const aSlug = (valor) =>
@@ -10,6 +11,48 @@ const aSlug = (valor) =>
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .toUpperCase();
+
+async function tieneColumnaTipo(usarPool) {
+  if (cacheTieneColumnaTipo !== null) return cacheTieneColumnaTipo;
+  try {
+    const [rows] = await usarPool.query(
+      `SELECT 1
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'productos'
+         AND COLUMN_NAME = 'tipo'
+       LIMIT 1`
+    );
+    cacheTieneColumnaTipo = rows.length > 0;
+  } catch {
+    cacheTieneColumnaTipo = false;
+  }
+  return cacheTieneColumnaTipo;
+}
+
+function inferirTipoProducto(producto = {}) {
+  const tipo = normalizar(producto.tipo);
+  if (TIPOS_VALIDOS.has(tipo)) return tipo;
+
+  const codigo = normalizar(producto.codigo);
+  if (codigo.startsWith('chat-')) return 'chatarra';
+
+  const condicion = normalizar(producto.condicion);
+  const texto = [
+    producto.nombre,
+    producto.descripcion,
+    producto.marca,
+    producto.tipo_caja,
+    producto.condicion
+  ]
+    .filter(Boolean)
+    .map(normalizar)
+    .join(' ');
+
+  if (condicion === 'chatarra' || texto.includes('chatarra')) return 'chatarra';
+  if (normalizar(producto.tipo_caja) && normalizar(producto.tipo_caja) !== '-') return 'bateria';
+  return 'varios';
+}
 
 async function obtenerCategoriaId(usarPool, tipoInventario) {
   const patrones = tipoInventario === 'chatarra'
@@ -55,28 +98,52 @@ async function crearProductoSiNoExiste(usarPool, datos) {
   } = datos;
 
   const tipo = TIPOS_VALIDOS.has(tipoInventario) ? tipoInventario : 'bateria';
+  const existeColumnaTipo = await tieneColumnaTipo(usarPool);
   const marcaLimpia = String(marca || '').trim();
   const tipoCajaLimpio = String(tipoCaja || '').trim();
   const nombre = String(nombreBase || `${marcaLimpia} ${tipoCajaLimpio}`.trim() || 'Producto').trim();
   const categoriaId = await obtenerCategoriaId(usarPool, tipo);
 
   if (tipo === 'varios') {
-    const [existenteVario] = await usarPool.query(
-      `SELECT id
-       FROM productos
-       WHERE tipo = 'varios' AND LOWER(nombre) = ?
-       LIMIT 1`,
-      [normalizar(nombre)]
-    );
+    const [existenteVario] = existeColumnaTipo
+      ? await usarPool.query(
+          `SELECT id
+           FROM productos
+           WHERE tipo = 'varios' AND LOWER(nombre) = ?
+           LIMIT 1`,
+          [normalizar(nombre)]
+        )
+      : await usarPool.query(
+          `SELECT id
+           FROM productos
+           WHERE LOWER(nombre) = ?
+             AND UPPER(COALESCE(codigo, '')) NOT LIKE 'CHAT-%'
+           LIMIT 1`,
+          [normalizar(nombre)]
+        );
     if (existenteVario.length > 0) return existenteVario[0].id;
   } else {
-    const [existente] = await usarPool.query(
-      `SELECT id
-       FROM productos
-       WHERE tipo = ? AND LOWER(marca) = ? AND LOWER(COALESCE(tipo_caja, '')) = ?
-       LIMIT 1`,
-      [tipo, normalizar(marcaLimpia), normalizar(tipoCajaLimpio)]
-    );
+    const [existente] = existeColumnaTipo
+      ? await usarPool.query(
+          `SELECT id
+           FROM productos
+           WHERE tipo = ? AND LOWER(marca) = ? AND LOWER(COALESCE(tipo_caja, '')) = ?
+           LIMIT 1`,
+          [tipo, normalizar(marcaLimpia), normalizar(tipoCajaLimpio)]
+        )
+      : await usarPool.query(
+          `SELECT id
+           FROM productos
+           WHERE LOWER(marca) = ?
+             AND LOWER(COALESCE(tipo_caja, '')) = ?
+             AND UPPER(COALESCE(codigo, '')) ${tipo === 'chatarra' ? 'LIKE ?' : 'NOT LIKE ?'}
+           LIMIT 1`,
+          [
+            normalizar(marcaLimpia),
+            normalizar(tipoCajaLimpio),
+            'CHAT-%'
+          ]
+        );
     if (existente.length > 0) return existente[0].id;
   }
 
@@ -84,13 +151,21 @@ async function crearProductoSiNoExiste(usarPool, datos) {
   const baseCodigo = aSlug(codigoBase) || aSlug(`${prefijo}-${marcaLimpia}-${tipoCajaLimpio}`) || `${prefijo}-${Date.now()}`;
   const codigo = await generarCodigoUnico(usarPool, tipo === 'chatarra' && !baseCodigo.startsWith('CHAT-') ? `CHAT-${baseCodigo}` : baseCodigo);
 
-  const [ins] = await usarPool.query(
-    `INSERT INTO productos (
-      codigo, nombre, marca, tipo_caja, condicion,
-      categoria_id, tipo, precio_costo, precio_venta, activo
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 1)`,
-    [codigo, nombre, marcaLimpia || nombre, tipoCajaLimpio || '-', condicion || 'Nueva', categoriaId, tipo]
-  );
+  const [ins] = existeColumnaTipo
+    ? await usarPool.query(
+        `INSERT INTO productos (
+          codigo, nombre, marca, tipo_caja, condicion,
+          categoria_id, tipo, precio_costo, precio_venta, activo
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 1)`,
+        [codigo, nombre, marcaLimpia || nombre, tipoCajaLimpio || '-', condicion || 'Nueva', categoriaId, tipo]
+      )
+    : await usarPool.query(
+        `INSERT INTO productos (
+          codigo, nombre, marca, tipo_caja, condicion,
+          categoria_id, precio_costo, precio_venta, activo
+        ) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 1)`,
+        [codigo, nombre, marcaLimpia || nombre, tipoCajaLimpio || '-', condicion || 'Nueva', categoriaId]
+      );
 
   await usarPool.query(
     'INSERT INTO inventario_stock (producto_id, cantidad) VALUES (?, 0)',
@@ -101,13 +176,22 @@ async function crearProductoSiNoExiste(usarPool, datos) {
 }
 
 async function obtenerProductoPorId(usarPool, productoId) {
-  const [rows] = await usarPool.query(
-    `SELECT id, codigo, nombre, marca, tipo_caja, condicion, tipo
-     FROM productos
-     WHERE id = ?
-     LIMIT 1`,
-    [productoId]
-  );
+  const existeColumnaTipo = await tieneColumnaTipo(usarPool);
+  const [rows] = existeColumnaTipo
+    ? await usarPool.query(
+        `SELECT id, codigo, nombre, marca, tipo_caja, condicion, tipo
+         FROM productos
+         WHERE id = ?
+         LIMIT 1`,
+        [productoId]
+      )
+    : await usarPool.query(
+        `SELECT id, codigo, nombre, marca, tipo_caja, condicion
+         FROM productos
+         WHERE id = ?
+         LIMIT 1`,
+        [productoId]
+      );
   return rows.length > 0 ? rows[0] : null;
 }
 
@@ -129,7 +213,7 @@ export async function resolverProducto(art = {}, conexion, opciones = {}) {
 
     const productoBase = await obtenerProductoPorId(usarPool, productoId);
     if (!productoBase) return productoId;
-    if (productoBase.tipo === 'chatarra') return productoBase.id;
+    if (inferirTipoProducto(productoBase) === 'chatarra') return productoBase.id;
 
     const marca = (art.marca_custom || art.marca || productoBase.marca || '').trim();
     const tipoCaja = (art.tipo_caja_custom || art.tipo_caja || productoBase.tipo_caja || '').trim();
@@ -141,7 +225,7 @@ export async function resolverProducto(art = {}, conexion, opciones = {}) {
       tipoCaja,
       nombreBase,
       codigoBase: productoBase.codigo || `${marca}-${tipoCaja}`,
-      condicion: 'Chatarra'
+      condicion: 'Usada'
     });
   }
 
@@ -170,6 +254,6 @@ export async function resolverProducto(art = {}, conexion, opciones = {}) {
     tipoCaja,
     nombreBase: nombre || `${marca} ${tipoCaja}`,
     codigoBase: art.codigo || `${marca}-${tipoCaja}`,
-    condicion: tipoInventario === 'chatarra' ? 'Chatarra' : (art.condicion || 'Nueva')
+    condicion: tipoInventario === 'chatarra' ? (art.condicion || 'Usada') : (art.condicion || 'Nueva')
   });
 }

@@ -12,7 +12,7 @@ import SelectPremium from '../componentes/SelectPremium.jsx';
 import TablePremium from '../componentes/TablePremium.jsx';
 import { tienePermiso } from '../utilidades/permisosCliente.js';
 import PageTitle from '../componentes/PageTitle.jsx';
-import { esProductoBateria } from '../utilidades/esProductoBateria.js';
+const normalizarTexto = (valor) => String(valor || '').trim().toLowerCase();
 
 const VistaFacturas = ({ usuario }) => {
   const {
@@ -20,7 +20,7 @@ const VistaFacturas = ({ usuario }) => {
     modalConfigEmpresa, setModalConfigEmpresa, formFactura, setFormFactura, configEmpresa,
     totalesCalculados, productosPOS, agregarItem, eliminarItem, actualizarItem, seleccionarProductoItem, crearFactura, anularFactura,
     descargarPDF, guardarConfig, abrirModalFacturaConVenta, facturaExistenteVenta,
-    setFacturaExistenteVenta, reintentarSRI
+    setFacturaExistenteVenta, reintentarSRI, esBateriaProducto, esVarioProducto
   } = useVistaFacturas();
 
   const { paginaActual, setPaginaActual, elementosPorPagina, setElementosPorPagina, totalPaginas, itemsPaginados, totalElementos } = usePaginacion(listaFacturas, 10);
@@ -51,30 +51,47 @@ const VistaFacturas = ({ usuario }) => {
   const esAdmin = tienePermiso(usuario, 'roles_admin');
 
   const [formConfig, setFormConfig] = useState({});
-  const productosBateriaOpciones = useMemo(
-    () =>
-      (productosPOS || [])
-        .filter((p) => esProductoBateria(p))
-        .map((p) => ({
-          value: String(p.producto_id ?? p.id),
-          label: [p.marca, p.tipo_caja].filter(Boolean).join(' · ') || p.nombre || p.codigo,
-          codigo: p.codigo || '',
-          producto: p,
-        })),
-    [productosPOS]
+
+  const productosBateria = useMemo(
+    () => (productosPOS || []).filter((p) => esBateriaProducto(p)),
+    [productosPOS, esBateriaProducto]
   );
+
+  const productosVarios = useMemo(
+    () => (productosPOS || []).filter((p) => esVarioProducto(p)),
+    [productosPOS, esVarioProducto]
+  );
+
+  const marcasBateria = useMemo(() => {
+    const marcas = [...new Set(productosBateria.map((p) => String(p.marca || '').trim()).filter(Boolean))];
+    return marcas.sort((a, b) => a.localeCompare(b));
+  }, [productosBateria]);
+
+  const tiposCajaPorMarca = useMemo(() => {
+    const mapa = new Map();
+    productosBateria.forEach((p) => {
+      const marca = String(p.marca || '').trim();
+      const tipoCaja = String(p.tipo_caja || '').trim();
+      if (!marca || !tipoCaja) return;
+      const key = normalizarTexto(marca);
+      if (!mapa.has(key)) mapa.set(key, new Set());
+      mapa.get(key).add(tipoCaja);
+    });
+    const mapaFinal = new Map();
+    mapa.forEach((setTipos, key) => {
+      mapaFinal.set(key, [...setTipos].sort((a, b) => a.localeCompare(b)));
+    });
+    return mapaFinal;
+  }, [productosBateria]);
 
   const productosVariosOpciones = useMemo(
     () =>
-      (productosPOS || [])
-        .filter((p) => !esProductoBateria(p))
-        .map((p) => ({
-          value: String(p.producto_id ?? p.id),
-          label: p.nombre || p.descripcion || p.codigo,
-          codigo: p.codigo || '',
-          producto: p,
-        })),
-    [productosPOS]
+      productosVarios.map((p) => ({
+        value: String(p.producto_id ?? p.id),
+        label: [p.codigo, p.nombre || p.descripcion || 'Producto varios'].filter(Boolean).join(' · '),
+        producto: p,
+      })),
+    [productosVarios]
   );
   const columnasFacturas = [
     { key: 'numero', label: 'N° Factura', width: '120px' },
@@ -305,83 +322,199 @@ const VistaFacturas = ({ usuario }) => {
 
                   <div className="space-y-3">
                     {formFactura.items.map((item, index) => {
-                      const opciones = item.tipo === 'varios' ? productosVariosOpciones : productosBateriaOpciones;
                       const subtotalItem = safeNumber(item.cantidad) * safeNumber(item.precio_unitario);
+                      const tipoCajaOpciones = tiposCajaPorMarca.get(normalizarTexto(item.marca)) || [];
 
                       return (
-                        <div key={item.uid || index} className="grid grid-cols-1 lg:grid-cols-[minmax(240px,2fr)_minmax(130px,1fr)_120px_140px_120px_48px] gap-3 items-end border-b border-border-default/50 pb-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">
-                              {item.tipo === 'varios' ? 'Producto Varios' : 'Producto Batería'}
-                            </label>
-                            <SelectPremium
-                              options={[
-                                { value: '', label: item.tipo === 'varios' ? 'Seleccione un producto varios' : 'Seleccione una batería' },
-                                ...opciones.map((o) => ({ value: o.value, label: o.label })),
-                              ]}
-                              value={String(item.producto_id || '')}
-                              onChange={(e) => {
-                                const seleccionado = opciones.find((o) => String(o.value) === String(e.target.value));
-                                actualizarItem(index, 'producto_id', e.target.value);
-                                if (seleccionado?.producto) {
-                                  seleccionarProductoItem(index, { ...seleccionado.producto, tipo_inventario: item.tipo });
-                                  actualizarItem(index, 'codigo', seleccionado.producto.codigo || '');
-                                }
-                              }}
-                              placeholder={item.tipo === 'varios' ? 'Seleccione un producto varios' : 'Seleccione una batería'}
-                              className="w-full"
-                            />
-                          </div>
+                        <div key={item.uid} className="space-y-3 border-b border-border-default/50 pb-4">
+                          {item.tipo === 'varios' ? (
+                            <>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Producto</label>
+                                  <SelectPremium
+                                    options={[
+                                      { value: '', label: 'Seleccione un producto varios' },
+                                      ...productosVariosOpciones.map((o) => ({ value: o.value, label: o.label })),
+                                    ]}
+                                    value={String(item.producto_id || '')}
+                                    onChange={(e) => {
+                                      const seleccionado = productosVariosOpciones.find(
+                                        (o) => String(o.value) === String(e.target.value)
+                                      );
+                                      actualizarItem(index, 'producto_id', e.target.value);
+                                      if (seleccionado?.producto) {
+                                        seleccionarProductoItem(index, {
+                                          ...seleccionado.producto,
+                                          tipo_inventario: 'varios',
+                                        });
+                                      }
+                                    }}
+                                    placeholder="Seleccione un producto varios"
+                                    className="w-full"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Código</label>
+                                  <input
+                                    type="text"
+                                    className="input-premium h-11 font-mono"
+                                    value={item.codigo || ''}
+                                    onChange={(e) => actualizarItem(index, 'codigo', e.target.value)}
+                                    placeholder="Ingrese el código"
+                                  />
+                                </div>
+                              </div>
 
-                          <div className="space-y-1.5">
-                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Código</label>
-                            <input
-                              type="text"
-                              className="input-premium h-11 font-mono"
-                              value={item.codigo || ''}
-                              onChange={(e) => actualizarItem(index, 'codigo', e.target.value)}
-                              placeholder="Código"
-                            />
-                          </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-[120px_160px_1fr_auto] gap-3 items-end">
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Cantidad</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    className="input-premium h-11 text-center font-bold"
+                                    value={item.cantidad}
+                                    onChange={(e) => actualizarItem(index, 'cantidad', e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Precio Unitario</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="input-premium h-11 text-right"
+                                    value={item.precio_unitario}
+                                    onChange={(e) => actualizarItem(index, 'precio_unitario', e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-1.5 text-right">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted block">Subtotal</label>
+                                  <span className="money-value text-base">${subtotalItem.toFixed(2)}</span>
+                                </div>
+                                <div className="h-11 flex items-center justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => eliminarItem(index)}
+                                    className="action-btn action-btn-icon delete-btn"
+                                    title="Eliminar item"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Marca</label>
+                                  <SelectPremium
+                                    options={[
+                                      { value: '', label: 'Seleccione una marca' },
+                                      ...marcasBateria.map((marca) => ({ value: marca, label: marca })),
+                                    ]}
+                                    value={item.marca || ''}
+                                    onChange={(e) => {
+                                      const marca = e.target.value;
+                                      actualizarItem(index, 'marca', marca);
+                                      actualizarItem(index, 'tipo_caja', '');
+                                      actualizarItem(index, 'producto_id', '');
+                                      actualizarItem(index, 'codigo', '');
+                                      actualizarItem(index, 'condicion', '');
+                                      actualizarItem(index, 'descripcion', '');
+                                      actualizarItem(index, 'precio_unitario', 0);
+                                    }}
+                                    placeholder="Seleccione una marca"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Tipo Caja</label>
+                                  <SelectPremium
+                                    options={[
+                                      { value: '', label: 'Seleccione un tipo de caja' },
+                                      ...tipoCajaOpciones.map((tipo) => ({ value: tipo, label: tipo })),
+                                    ]}
+                                    value={item.tipo_caja || ''}
+                                    onChange={(e) => {
+                                      const tipoCaja = e.target.value;
+                                      actualizarItem(index, 'tipo_caja', tipoCaja);
+                                      const seleccionado = productosBateria.find(
+                                        (p) =>
+                                          normalizarTexto(p.marca) === normalizarTexto(item.marca) &&
+                                          normalizarTexto(p.tipo_caja) === normalizarTexto(tipoCaja)
+                                      );
+                                      if (seleccionado) {
+                                        seleccionarProductoItem(index, {
+                                          ...seleccionado,
+                                          tipo_inventario: 'bateria',
+                                        });
+                                      }
+                                    }}
+                                    placeholder="Seleccione un tipo de caja"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Condición</label>
+                                  <input
+                                    type="text"
+                                    className="input-premium h-11"
+                                    value={item.condicion || ''}
+                                    onChange={(e) => actualizarItem(index, 'condicion', e.target.value)}
+                                    placeholder="Condición"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Código</label>
+                                  <input
+                                    type="text"
+                                    className="input-premium h-11 font-mono"
+                                    value={item.codigo || ''}
+                                    onChange={(e) => actualizarItem(index, 'codigo', e.target.value)}
+                                    placeholder="Ingrese el código"
+                                  />
+                                </div>
+                              </div>
 
-                          <div className="space-y-1.5">
-                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Cant.</label>
-                            <input
-                              type="number"
-                              min="1"
-                              className="input-premium h-11 text-center font-bold"
-                              value={item.cantidad}
-                              onChange={(e) => actualizarItem(index, 'cantidad', e.target.value)}
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">P. Unit.</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              className="input-premium h-11 text-right"
-                              value={item.precio_unitario}
-                              onChange={(e) => actualizarItem(index, 'precio_unitario', e.target.value)}
-                            />
-                          </div>
-
-                          <div className="space-y-1.5 text-right">
-                            <label className="text-[9px] font-black uppercase tracking-wider text-text-muted block">Subtotal</label>
-                            <span className="money-value text-base">${subtotalItem.toFixed(2)}</span>
-                          </div>
-
-                          <div className="h-11 flex items-center justify-end">
-                            <button
-                              type="button"
-                              onClick={() => eliminarItem(index)}
-                              className="action-btn action-btn-icon delete-btn"
-                              title="Eliminar línea"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-[120px_160px_1fr_auto] gap-3 items-end">
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Cantidad</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    className="input-premium h-11 text-center font-bold"
+                                    value={item.cantidad}
+                                    onChange={(e) => actualizarItem(index, 'cantidad', e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted">Precio Unitario</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="input-premium h-11 text-right"
+                                    value={item.precio_unitario}
+                                    onChange={(e) => actualizarItem(index, 'precio_unitario', e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-1.5 text-right">
+                                  <label className="text-[9px] font-black uppercase tracking-wider text-text-muted block">Subtotal</label>
+                                  <span className="money-value text-base">${subtotalItem.toFixed(2)}</span>
+                                </div>
+                                <div className="h-11 flex items-center justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={() => eliminarItem(index)}
+                                    className="action-btn action-btn-icon delete-btn"
+                                    title="Eliminar item"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       );
                     })}
@@ -389,7 +522,7 @@ const VistaFacturas = ({ usuario }) => {
                     {formFactura.items.length === 0 && (
                       <div className="flex flex-col items-center py-8 text-text-muted gap-2">
                         <PlusCircle size={28} className="opacity-30" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Agrega al menos una línea</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest">Agregue una batería o un producto varios</p>
                       </div>
                     )}
                   </div>

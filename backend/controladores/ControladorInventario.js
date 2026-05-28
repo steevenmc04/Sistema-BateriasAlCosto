@@ -9,8 +9,30 @@ import Auditoria from '../modelos/Auditoria.js';
  * Controla el catálogo de productos unificado, categorías y Kardex de movimientos de stock.
  */
 class ControladorInventario {
+  static _cacheTieneColumnaTipo = null;
+
   static _normalizarTexto(valor) {
     return String(valor || '').trim().toLowerCase();
+  }
+
+  static async _existeColumnaTipoProductos() {
+    if (ControladorInventario._cacheTieneColumnaTipo !== null) {
+      return ControladorInventario._cacheTieneColumnaTipo;
+    }
+    try {
+      const [rows] = await pool.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tipo'
+         LIMIT 1`
+      );
+      ControladorInventario._cacheTieneColumnaTipo = rows.length > 0;
+    } catch {
+      ControladorInventario._cacheTieneColumnaTipo = false;
+    }
+    return ControladorInventario._cacheTieneColumnaTipo;
   }
 
   static _esBateriaPOS(row) {
@@ -70,6 +92,8 @@ class ControladorInventario {
   //   3. Logging detallado para diagnosticar en producción
   static async listarParaPOS(req, res) {
     try {
+      const tieneColumnaTipo = await ControladorInventario._existeColumnaTipoProductos();
+
       // --- 1. Asegurar que productos tenga datos (sync desde inventario_baterias si es necesario) ---
       const [check] = await pool.query('SELECT COUNT(*) AS total FROM productos WHERE activo = 1');
       if (check[0].total === 0) {
@@ -89,7 +113,7 @@ class ControladorInventario {
           p.marca,
           p.tipo_caja,
           p.condicion,
-          p.tipo,
+          ${tieneColumnaTipo ? 'p.tipo' : "'' AS tipo"},
           COALESCE(p.precio_venta, p.precio_costo, 0) AS precio,
           COALESCE(s.cantidad, 0) AS stock,
           COALESCE(c.nombre, '') AS categoria
@@ -105,8 +129,9 @@ class ControladorInventario {
       }
 
       const productos = rows.map((p) => {
-        const tipoInventario = ['bateria', 'varios', 'chatarra'].includes(p.tipo)
-          ? p.tipo
+        const tipoRaw = ControladorInventario._normalizarTexto(p.tipo);
+        const tipoInventario = ['bateria', 'varios', 'chatarra'].includes(tipoRaw)
+          ? tipoRaw
           : (ControladorInventario._esBateriaPOS(p) ? 'bateria' : 'varios');
         const esBateria = tipoInventario === 'bateria';
         const stock = Number(p.stock ?? 0);
@@ -148,6 +173,7 @@ class ControladorInventario {
   // sin hardcodear categoria_id (usa la primera categoría existente)
   static async _sincronizarBaterias() {
     let categoriaId = 1;
+    const tieneColumnaTipo = await ControladorInventario._existeColumnaTipoProductos();
     try {
       const [cats] = await pool.query('SELECT id FROM categorias ORDER BY id LIMIT 1');
       if (cats && cats.length > 0) categoriaId = cats[0].id;
@@ -161,7 +187,7 @@ class ControladorInventario {
       `UPDATE productos p
        INNER JOIN inventario_baterias ib ON ib.codigo = p.codigo
        SET
-         p.tipo = 'bateria',
+         ${tieneColumnaTipo ? "p.tipo = 'bateria'," : ''}
          p.marca = ib.marca,
          p.tipo_caja = ib.tipo_caja,
          p.condicion = ib.condicion,
@@ -196,22 +222,34 @@ class ControladorInventario {
         const nombre = `${b.marca} ${b.tipo_caja}`.trim();
         // Intentar con precio_venta; si falla, reintentar sin ella
         try {
-          const [res] = await pool.query(
-            `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, tipo, precio_costo, precio_venta, activo)
-             VALUES (?, ?, ?, ?, ?, ?, 'bateria', ?, ?, 1)`,
-            [b.codigo, nombre, b.marca, b.tipo_caja, b.condicion, categoriaId, b.precio, b.precio]
-          );
+          const [res] = tieneColumnaTipo
+            ? await pool.query(
+                `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, tipo, precio_costo, precio_venta, activo)
+                 VALUES (?, ?, ?, ?, ?, ?, 'bateria', ?, ?, 1)`,
+                [b.codigo, nombre, b.marca, b.tipo_caja, b.condicion, categoriaId, b.precio, b.precio]
+              )
+            : await pool.query(
+                `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, precio_costo, precio_venta, activo)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                [b.codigo, nombre, b.marca, b.tipo_caja, b.condicion, categoriaId, b.precio, b.precio]
+              );
           await pool.query(
             'INSERT INTO inventario_stock (producto_id, cantidad) VALUES (?, ?)',
             [res.insertId, b.cantidad]
           );
         } catch (innerErr) {
           try {
-            const [res] = await pool.query(
-              `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, tipo, precio_costo, activo)
-               VALUES (?, ?, ?, ?, ?, ?, 'bateria', ?, 1)`,
-              [b.codigo, nombre, b.marca, b.tipo_caja, b.condicion, categoriaId, b.precio]
-            );
+            const [res] = tieneColumnaTipo
+              ? await pool.query(
+                  `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, tipo, precio_costo, activo)
+                   VALUES (?, ?, ?, ?, ?, ?, 'bateria', ?, 1)`,
+                  [b.codigo, nombre, b.marca, b.tipo_caja, b.condicion, categoriaId, b.precio]
+                )
+              : await pool.query(
+                  `INSERT INTO productos (codigo, nombre, marca, tipo_caja, condicion, categoria_id, precio_costo, activo)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+                  [b.codigo, nombre, b.marca, b.tipo_caja, b.condicion, categoriaId, b.precio]
+                );
             await pool.query(
               'INSERT INTO inventario_stock (producto_id, cantidad) VALUES (?, ?)',
               [res.insertId, b.cantidad]
@@ -230,6 +268,7 @@ class ControladorInventario {
   // Se ejecuta en cada consulta POS para asegurar que nuevos VAR-* estén disponibles.
   static async _sincronizarVarios() {
     let categoriaId = 1;
+    const tieneColumnaTipo = await ControladorInventario._existeColumnaTipoProductos();
     try {
       const [cats] = await pool.query(
         `SELECT id
@@ -250,11 +289,11 @@ class ControladorInventario {
 
     await pool.query(
       `INSERT INTO productos (
-         categoria_id, codigo, nombre, descripcion, marca, modelo, condicion, tipo, tipo_caja,
+         categoria_id, codigo, nombre, descripcion, marca, modelo, condicion, ${tieneColumnaTipo ? 'tipo,' : ''} tipo_caja,
          precio_costo, precio_venta, stock_minimo, activo
        )
        SELECT
-         ?, iv.codigo, iv.nombre, iv.descripcion, iv.nombre, NULL, 'Nueva', 'varios', '-',
+         ?, iv.codigo, iv.nombre, iv.descripcion, iv.nombre, NULL, 'Nueva', ${tieneColumnaTipo ? "'varios'," : ''} '-',
          COALESCE(iv.precio, 0), COALESCE(iv.precio, 0), 0, 1
        FROM inventario_varios iv
        LEFT JOIN productos p ON p.codigo = iv.codigo
@@ -268,7 +307,7 @@ class ControladorInventario {
        SET
          p.nombre = iv.nombre,
          p.descripcion = iv.descripcion,
-         p.tipo = 'varios',
+         ${tieneColumnaTipo ? "p.tipo = 'varios'," : ''}
          p.marca = iv.nombre,
          p.tipo_caja = '-',
          p.condicion = 'Nueva',

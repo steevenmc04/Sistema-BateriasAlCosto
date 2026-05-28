@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import apiCliente, { apiUrl, extraerMensajeError, facturasAPI, inventarioAPI } from '../servicios/servicios.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
 
+const normalizarTexto = (valor) => String(valor || '').trim().toLowerCase();
+const aNumeroSeguro = (valor, fallback = 0) => {
+  const n = Number(valor);
+  return Number.isFinite(n) ? n : fallback;
+};
+
 const crearUid = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -9,15 +15,93 @@ const crearUid = () => {
   return `item-${Date.now()}-${Math.floor(Math.random() * 99999)}`;
 };
 
+const normalizarProductoPOS = (p = {}) => {
+  const id = p.producto_id ?? p.id ?? null;
+  const stock = aNumeroSeguro(p.stock ?? p.stock_actual ?? p.cantidad_disponible ?? p.cantidad, 0);
+  const precio = aNumeroSeguro(p.precio ?? p.precio_venta ?? p.pvp ?? p.precio_costo, 0);
+
+  return {
+    ...p,
+    id,
+    producto_id: id,
+    codigo: p.codigo ?? p.referencia ?? '',
+    nombre: p.nombre ?? p.descripcion ?? '',
+    marca: p.marca ?? '',
+    tipo_caja: p.tipo_caja ?? '',
+    categoria: p.categoria ?? p.nombre_categoria ?? '',
+    tipo_producto: p.tipo_producto ?? p.tipo ?? '',
+    tipo_inventario: p.tipo_inventario ?? p.tipo ?? p.tipo_producto ?? '',
+    condicion: p.condicion ?? p.estado ?? '',
+    es_bateria: p.es_bateria === true || p.es_bateria === 1 || p.es_bateria === '1',
+    stock,
+    stock_actual: stock,
+    cantidad_disponible: stock,
+    precio,
+    precio_venta: precio,
+  };
+};
+
+const esChatarraProducto = (producto = {}) => {
+  const texto = [
+    producto.tipo_inventario,
+    producto.categoria,
+    producto.tipo_producto,
+    producto.condicion,
+    producto.descripcion,
+    producto.nombre,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return normalizarTexto(producto.tipo_inventario) === 'chatarra' || texto.includes('chatarra');
+};
+
+const esBateriaProducto = (producto = {}) => {
+  if (esChatarraProducto(producto)) return false;
+
+  const texto = [
+    producto.tipo_inventario,
+    producto.categoria,
+    producto.tipo_producto,
+    producto.nombre_categoria,
+    producto.tipo,
+    producto.condicion,
+    producto.tipo_caja,
+    producto.descripcion,
+    producto.nombre,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    normalizarTexto(producto.tipo_inventario) === 'bateria' ||
+    producto.es_bateria === true ||
+    texto.includes('bateria') ||
+    Boolean(producto.tipo_caja)
+  );
+};
+
+const esVarioProducto = (producto = {}) => !esBateriaProducto(producto) && !esChatarraProducto(producto);
+
+const descripcionBateria = (producto = {}) =>
+  [producto.marca, producto.tipo_caja, producto.condicion, producto.codigo].filter(Boolean).join(' - ');
+
+const descripcionVario = (producto = {}) => producto.nombre || producto.descripcion || producto.codigo || '';
+
 const crearItemFactura = (tipo = 'bateria') => ({
   uid: crearUid(),
   tipo,
   producto_id: '',
+  producto_nombre: '',
+  marca: '',
+  tipo_caja: '',
+  condicion: '',
   codigo: '',
   descripcion: '',
   cantidad: 1,
   precio_unitario: 0,
-  descuento: 0,
 });
 
 /**
@@ -116,7 +200,7 @@ export function useVistaFacturas() {
     try {
       const { data } = await inventarioAPI.listarProductosPOS({ t: Date.now() });
       const rows = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
-      setProductosPOS(rows);
+      setProductosPOS(rows.map(normalizarProductoPOS));
     } catch {
       setProductosPOS([]);
     }
@@ -181,16 +265,16 @@ export function useVistaFacturas() {
     setFormFactura((prev) => {
       const nuevosItems = [...prev.items];
       const actual = nuevosItems[index] || crearItemFactura('bateria');
+      const esVario = actual.tipo === 'varios';
       nuevosItems[index] = {
         ...actual,
         producto_id: producto.producto_id ?? producto.id ?? '',
         codigo: producto.codigo || '',
-        descripcion:
-          producto.tipo_inventario === 'varios' || producto.tipo === 'varios'
-            ? (producto.nombre || producto.descripcion || '')
-            : [producto.marca, producto.tipo_caja, producto.condicion, producto.codigo]
-                .filter(Boolean)
-                .join(' - '),
+        producto_nombre: esVario ? (producto.nombre || producto.descripcion || '') : '',
+        marca: esVario ? '' : (producto.marca || ''),
+        tipo_caja: esVario ? '' : (producto.tipo_caja || ''),
+        condicion: esVario ? '' : (producto.condicion || producto.estado || ''),
+        descripcion: esVario ? descripcionVario(producto) : descripcionBateria(producto),
         precio_unitario: Number(producto.precio ?? producto.precio_venta ?? 0),
       };
       return { ...prev, items: nuevosItems };
@@ -208,7 +292,11 @@ export function useVistaFacturas() {
           direccion: formFactura.cliente_direccion
         },
         items: formFactura.items.map((item) => ({
-          descripcion: item.descripcion || item.nombre || 'Producto',
+          descripcion:
+            item.descripcion ||
+            (item.tipo === 'varios'
+              ? (item.producto_nombre || item.codigo || 'Producto Varios')
+              : [item.marca, item.tipo_caja, item.condicion, item.codigo].filter(Boolean).join(' - ') || item.codigo || 'Bateria'),
           cantidad: Number(item.cantidad) || 1,
           precio_unitario: Number(item.precio_unitario) || 0,
           descuento: 0,
@@ -317,15 +405,23 @@ export function useVistaFacturas() {
       items: Array.isArray(datosVenta.items) && datosVenta.items.length > 0
         ? datosVenta.items.map(item => ({
             uid: crearUid(),
-            tipo: 'bateria',
+            tipo:
+              normalizarTexto(item.tipo_inventario) === 'varios' ||
+              normalizarTexto(item.tipo) === 'varios' ||
+              (!item.marca && !item.tipo_caja && (item.nombre || item.descripcion))
+                ? 'varios'
+                : 'bateria',
             producto_id: item.producto_id || '',
             codigo: item.codigo || '',
-            descripcion:     item.descripcion     || '',
+            producto_nombre: item.nombre || '',
+            marca: item.marca || '',
+            tipo_caja: item.tipo_caja || '',
+            condicion: item.condicion || item.estado || '',
+            descripcion: item.descripcion || '',
             cantidad:        Number(item.cantidad) || 1,
             precio_unitario: Number(item.precio_unitario) || 0,
-            descuento:       0,
           }))
-        : [crearItemFactura('bateria')],
+        : [],
     });
 
     setModalNuevaFactura(true);
@@ -358,6 +454,9 @@ export function useVistaFacturas() {
     configEmpresa,
     totalesCalculados,
     productosPOS,
+    esBateriaProducto,
+    esChatarraProducto,
+    esVarioProducto,
     agregarItem,
     eliminarItem,
     actualizarItem,
