@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { FileText, Download, RefreshCw, Calendar } from 'lucide-react';
+import { FileText, Download, RefreshCw } from 'lucide-react';
 import { useVistaReportes } from '../hooks/useVistaReportes.js';
 import Button from '../componentes/Button.jsx';
 import Badge from '../componentes/Badge.jsx';
@@ -25,45 +25,45 @@ const VistaReportes = ({ usuario }) => {
   const puedeVer = tienePermiso(usuario, 'reportes_ver');
   const puedePdf = tienePermiso(usuario, 'reportes_pdf');
   const columnasVentas = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
-    { key: 'tipo', label: 'Tipo', widthClassName: 'w-[120px]' },
-    { key: 'codigo', label: 'Código', widthClassName: 'w-[140px]' },
-    { key: 'cliente', label: 'Cliente', widthClassName: 'w-[220px]' },
-    { key: 'vendedor', label: 'Vendido por', widthClassName: 'w-[180px]' },
-    { key: 'cantidad', label: 'Cant.', widthClassName: 'w-[90px]', align: 'center' },
-    { key: 'pvp', label: 'PVP Unit.', widthClassName: 'w-[140px]', align: 'right' },
-    { key: 'costo', label: 'Costo', widthClassName: 'w-[140px]', align: 'right' },
-    { key: 'iva', label: 'IVA?', widthClassName: 'w-[120px]' },
-    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
+    { key: 'fecha', label: 'Fecha', widthClassName: 'report-date-col' },
+    { key: 'tipo', label: 'Tipo', widthClassName: 'report-type-col' },
+    { key: 'codigo', label: 'Código', widthClassName: 'report-code-col' },
+    { key: 'cliente', label: 'Cliente', widthClassName: 'report-client-col' },
+    { key: 'vendedor', label: 'Vendido por', widthClassName: 'report-vendor-col' },
+    { key: 'cantidad', label: 'Cant.', widthClassName: 'report-quantity-col', align: 'center' },
+    { key: 'pvp', label: 'PVP Unit.', widthClassName: 'report-money-col', align: 'right' },
+    { key: 'costo', label: 'Costo', widthClassName: 'report-money-col', align: 'right' },
+    { key: 'iva', label: 'IVA?', widthClassName: 'report-iva-col', align: 'center' },
+    { key: 'total', label: 'Total', widthClassName: 'report-total-col', align: 'right' },
   ];
   const columnasCompras = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
-    { key: 'marca', label: 'Marca', widthClassName: 'w-[180px]' },
-    { key: 'caja', label: 'Caja', widthClassName: 'w-[180px]' },
-    { key: 'cond', label: 'Cond.', widthClassName: 'w-[120px]' },
-    { key: 'cantidad', label: 'Cantidad', widthClassName: 'w-[90px]', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
-    { key: 'proveedor', label: 'Proveedor', widthClassName: 'w-[220px]' },
+    { key: 'fecha', label: 'Fecha', widthClassName: 'report-date-col' },
+    { key: 'marca', label: 'Marca', widthClassName: 'report-client-col' },
+    { key: 'caja', label: 'Caja', widthClassName: 'report-vendor-col' },
+    { key: 'cond', label: 'Cond.', widthClassName: 'report-iva-col' },
+    { key: 'cantidad', label: 'Cantidad', widthClassName: 'report-quantity-col', align: 'center' },
+    { key: 'total', label: 'Total', widthClassName: 'report-total-col', align: 'right' },
+    { key: 'proveedor', label: 'Proveedor', widthClassName: 'report-client-col' },
   ];
   const columnasChatarra = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
-    { key: 'tipo', label: 'Operación', widthClassName: 'w-[120px]' },
-    { key: 'caja', label: 'Caja', widthClassName: 'w-[180px]' },
-    { key: 'cantidad', label: 'Cantidad', widthClassName: 'w-[90px]', align: 'center' },
-    { key: 'pu', label: 'PU', widthClassName: 'w-[140px]', align: 'right' },
-    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
-    { key: 'contraparte', label: 'Contraparte', widthClassName: 'w-[220px]' },
+    { key: 'fecha', label: 'Fecha', widthClassName: 'report-date-col' },
+    { key: 'tipo', label: 'Operación', widthClassName: 'report-type-col' },
+    { key: 'caja', label: 'Caja', widthClassName: 'report-vendor-col' },
+    { key: 'cantidad', label: 'Cantidad', widthClassName: 'report-quantity-col', align: 'center' },
+    { key: 'pu', label: 'PU', widthClassName: 'report-money-col', align: 'right' },
+    { key: 'total', label: 'Total', widthClassName: 'report-total-col', align: 'right' },
+    { key: 'contraparte', label: 'Contraparte', widthClassName: 'report-client-col' },
   ];
   const columnasInventario = [
-    { key: 'clase', label: 'Clase', widthClassName: 'w-[120px]' },
-    { key: 'ref', label: 'Ref', widthClassName: 'w-[130px]' },
-    { key: 'marca', label: 'Marca', widthClassName: 'w-[220px]' },
-    { key: 'caja', label: 'Caja', widthClassName: 'w-[180px]' },
-    { key: 'cantidad', label: 'Cantidad', widthClassName: 'w-[90px]', align: 'center' },
-    { key: 'costo', label: 'Costo Unit.', widthClassName: 'w-[140px]', align: 'right' },
-    { key: 'pvp', label: 'PVP Sugerido', widthClassName: 'w-[140px]', align: 'right' },
-    { key: 'stock', label: 'Stock Valorizado', widthClassName: 'w-[150px]', align: 'right' },
-    { key: 'estado', label: 'Estado', widthClassName: 'w-[160px]', align: 'center' },
+    { key: 'clase', label: 'Clase', widthClassName: 'report-type-col' },
+    { key: 'ref', label: 'Ref', widthClassName: 'report-code-col' },
+    { key: 'marca', label: 'Marca', widthClassName: 'report-client-col' },
+    { key: 'caja', label: 'Caja', widthClassName: 'report-vendor-col' },
+    { key: 'cantidad', label: 'Cantidad', widthClassName: 'report-quantity-col', align: 'center' },
+    { key: 'costo', label: 'Costo Unit.', widthClassName: 'report-money-col', align: 'right' },
+    { key: 'pvp', label: 'PVP Sugerido', widthClassName: 'report-money-col', align: 'right' },
+    { key: 'stock', label: 'Stock Valorizado', widthClassName: 'report-total-col', align: 'right' },
+    { key: 'estado', label: 'Estado', widthClassName: 'inventory-status-col', align: 'center' },
   ];
 
   const renderDesktopCell = (r, column) => {
@@ -191,7 +191,7 @@ const VistaReportes = ({ usuario }) => {
 
   {vp.error && <div className="card-premium text-error font-bold text-sm">{vp.error}</div>}
 
-      <div className="border-t border-border-default pt-5">
+      <div className="border-t border-border-default pt-4">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border-default">
           <div className="flex items-center gap-3 text-text-primary">
             <FileText className="text-yellow-100" />
@@ -210,7 +210,7 @@ const VistaReportes = ({ usuario }) => {
         </div>
 
         {vp.tipo.startsWith('ventas') && vp.totales && !vp.cargando && (
-          <div className="grid grid-cols-2 gap-4 p-6 border-b border-border-default bg-white/[0.01]">
+          <div className="grid grid-cols-2 gap-4 px-6 py-4">
             <div className="py-2">
               <span className="text-[9px] font-black uppercase tracking-wider text-text-muted">Total Ventas</span>
               <p className="money-value text-xl mt-1">${safeNumber(vp.totales.monto_usd || 0).toFixed(2)}</p>
@@ -223,7 +223,7 @@ const VistaReportes = ({ usuario }) => {
         )}
 
         {vp.tipo === 'inventario' && vp.totales && !vp.cargando && (
-          <div className="grid grid-cols-2 gap-4 p-6 border-b border-border-default bg-white/[0.01]">
+          <div className="grid grid-cols-2 gap-4 px-6 py-4">
             <div className="py-2">
               <span className="text-[9px] font-black uppercase tracking-wider text-text-muted">Total Unidades en Stock</span>
               <p className="text-xl font-black text-white mt-1">{vp.totales.cantidad_unidades} unidades</p>
@@ -254,12 +254,12 @@ const VistaReportes = ({ usuario }) => {
             emptyMessage="No hay datos para el rango seleccionado."
             minWidthClass={
               vp.tipo.startsWith('ventas')
-                ? 'min-w-[1430px]'
+                ? 'min-w-[1200px]'
                 : vp.tipo === 'compras'
-                  ? 'min-w-[1090px]'
+                  ? 'min-w-[960px]'
                   : vp.tipo === 'chatarra'
-                    ? 'min-w-[1030px]'
-                    : 'min-w-[1330px]'
+                    ? 'min-w-[900px]'
+                    : 'min-w-[1080px]'
             }
             renderCell={renderDesktopCell}
           />
@@ -293,8 +293,8 @@ const VistaReportes = ({ usuario }) => {
             ))
           )}
         </div>
-        <div className="px-6 py-4 border-t border-border-default flex items-center gap-3 text-text-muted text-[10px] font-black uppercase tracking-[0.3em]">
-          <Calendar size={14} className="text-text-primary" /> Rango solicitado
+        <div className="px-6 py-3 text-text-muted text-[10px] font-black uppercase tracking-[0.2em]">
+          Rango solicitado
         </div>
       </div>
     </div>

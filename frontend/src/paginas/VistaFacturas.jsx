@@ -57,11 +57,11 @@ const VistaFacturas = ({ usuario }) => {
 
   const [formConfig, setFormConfig] = useState({});
   const columnasFacturas = [
-    { key: 'numero', label: 'N° Factura · Fecha', widthClassName: 'w-[170px]' },
-    { key: 'cliente', label: 'Cliente' },
-    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
-    { key: 'estado', label: 'Estado', widthClassName: 'w-[150px]', align: 'center' },
-    { key: 'acciones', label: 'Acciones', widthClassName: 'w-[140px]', align: 'center' },
+    { key: 'numero', label: 'N° Factura · Fecha', widthClassName: 'invoice-number-col' },
+    { key: 'cliente', label: 'Cliente', widthClassName: 'invoice-client-col' },
+    { key: 'total', label: 'Total', widthClassName: 'invoice-money-col', align: 'right' },
+    { key: 'estado', label: 'Estado', widthClassName: 'invoice-status-col', align: 'center' },
+    { key: 'acciones', label: 'Acciones', widthClassName: 'invoice-actions-col', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const abrirConfigEmpresa = () => {
     setFormConfig(configEmpresa || { razon_social: '', ruc: '', direccion: '', telefono: '', email: '', ciudad: 'Guayaquil', pais: 'Ecuador', prefijo_factura: 'FAC', iva_porcentaje: 15 });
@@ -132,7 +132,7 @@ const VistaFacturas = ({ usuario }) => {
           loading={cargando}
           loadingMessage="Cargando facturas..."
           emptyMessage="No se encontraron facturas."
-          minWidthClass="min-w-[980px]"
+          minWidthClass="min-w-[860px]"
           renderCell={(f, column) => {
             if (column.key === 'numero') {
               return (
@@ -153,7 +153,7 @@ const VistaFacturas = ({ usuario }) => {
             if (column.key === 'total') return <span className="money-cell">${safeNumber(f.total).toFixed(2)}</span>;
             if (column.key === 'estado') {
               return (
-                <div className="action-cell">
+                <div className="flex flex-col items-center gap-1">
                   <span className={`badge ${f.estado === 'emitida' ? 'badge-success' : 'badge-danger'}`}>{f.estado}</span>
                   {f.sri_estado === 'AUTORIZADA' && <span className="badge badge-success">SRI OK</span>}
                   {f.sri_estado === 'PENDIENTE' && <span className="badge badge-warning" title={f.sri_error}>SRI PEND</span>}
@@ -163,15 +163,15 @@ const VistaFacturas = ({ usuario }) => {
             if (column.key === 'acciones') {
               return (
                 <div className="action-cell">
-                  <button onClick={() => descargarPDF(f.id)} className="h-10 w-10 rounded-xl bg-black/50 border border-border-default text-text-muted hover:bg-zinc-900/80 hover:text-text-primary transition-colors flex items-center justify-center" title="Descargar PDF"><Download size={16} /></button>
+                  <button onClick={() => descargarPDF(f.id)} className="action-btn !w-10 !min-w-[40px] !px-0" title="Descargar PDF"><Download size={16} /></button>
                   {f.estado === 'emitida' && puedeAnular && (
-                    <button onClick={() => anularFactura(f.id)} className="h-10 w-10 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 hover:text-error transition-all flex items-center justify-center" title="Anular"><Trash2 size={16} /></button>
+                    <button onClick={() => anularFactura(f.id)} className="action-btn delete-btn !w-10 !min-w-[40px] !px-0" title="Anular"><Trash2 size={16} /></button>
                   )}
                   {f.sri_ride_url && (
-                    <a href={f.sri_ride_url} target="_blank" rel="noreferrer" className="h-10 px-3 rounded-xl border border-success/30 text-success text-[10px] font-black uppercase hover:bg-success/10 transition-all inline-flex items-center">RIDE</a>
+                    <a href={f.sri_ride_url} target="_blank" rel="noreferrer" className="action-btn !h-8 !px-2 !text-[10px]">RIDE</a>
                   )}
                   {f.sri_estado === 'PENDIENTE' && (
-                    <button onClick={() => reintentarSRI(f.id)} className="h-10 px-3 rounded-xl border border-warning/30 text-warning text-[10px] font-black uppercase hover:bg-warning/10 transition-all">SRI</button>
+                    <button onClick={() => reintentarSRI(f.id)} className="action-btn !h-8 !px-2 !text-[10px]">SRI</button>
                   )}
                 </div>
               );

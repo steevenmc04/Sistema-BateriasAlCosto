@@ -173,7 +173,7 @@
   }
   .table-premium {
     width: 100%;
-    min-width: 980px;
+    min-width: 920px;
     table-layout: fixed;
     border-collapse: collapse;
   }
@@ -192,8 +192,8 @@
     table-layout: fixed;
   }
   .table-premium th {
-    height: 56px;
-    padding: 0 20px;
+    height: 52px;
+    padding: 0 14px;
     font-size: 11px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -206,7 +206,7 @@
     vertical-align: middle;
   }
   .table-premium tbody tr {
-    height: 78px;
+    height: 64px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     transition: background 0.2s ease;
   }
@@ -214,7 +214,7 @@
     background: rgba(255,255,255,0.02);
   }
   .table-premium td {
-    padding: 14px 20px;
+    padding: 10px 14px;
     vertical-align: middle;
     color: #F2EFE6;
     font-size: 14px;
@@ -365,8 +365,8 @@
   }
 
   .table-header-cell {
-    height: 56px;
-    padding: 0 20px;
+    height: 52px;
+    padding: 0 14px;
     font-size: 11px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -378,7 +378,7 @@
   }
   .table-body-cell,
   .table-cell {
-    padding: 14px 20px;
+    padding: 10px 14px;
     font-size: 14px;
     line-height: 1.25;
     vertical-align: middle;
@@ -410,24 +410,60 @@
   .cell-center { text-align: center; }
   .cell-right { text-align: right; }
 
-  .reference-col { width: 120px; }
-  .product-col { width: 260px; }
-  .client-col { width: 240px; }
+  .reference-col { width: 110px; }
+  .product-col { width: auto; }
+  .client-col { width: auto; }
   .quantity-col { width: 90px; text-align: center; }
-  .items-col { width: 80px; text-align: center; }
-  .money-col { width: 140px; text-align: right; }
-  .status-col { width: 160px; text-align: center; }
-  .actions-col { width: 120px; text-align: center; }
+  .items-col { width: 70px; text-align: center; }
+  .money-col { width: 120px; text-align: right; }
+  .status-col { width: 140px; text-align: center; }
+  .actions-col { width: 110px; text-align: center; }
+
+  .date-col { width: 110px; }
+  .vendor-col { width: 150px; }
+  .invoice-col { width: 160px; }
+
+  .inventory-reference-col { width: 110px; }
+  .inventory-product-col { width: auto; }
+  .inventory-quantity-col { width: 90px; text-align: center; }
+  .inventory-money-col { width: 120px; text-align: right; }
+  .inventory-status-col { width: 140px; text-align: center; }
+  .inventory-actions-col { width: 110px; text-align: center; }
+
+  .sales-date-col { width: 110px; }
+  .sales-product-col { width: 220px; }
+  .sales-client-col { width: 220px; }
+  .sales-quantity-col { width: 80px; text-align: center; }
+  .sales-items-col { width: 70px; text-align: center; }
+  .sales-money-col { width: 120px; text-align: right; }
+  .sales-vendor-col { width: 150px; }
+  .sales-actions-col { width: 90px; text-align: center; }
+
+  .invoice-number-col { width: 160px; }
+  .invoice-client-col { width: auto; }
+  .invoice-money-col { width: 130px; text-align: right; }
+  .invoice-status-col { width: 130px; text-align: center; }
+  .invoice-actions-col { width: 120px; text-align: center; }
+
+  .report-date-col { width: 118px; }
+  .report-type-col { width: 100px; }
+  .report-code-col { width: 120px; }
+  .report-client-col { width: 180px; }
+  .report-vendor-col { width: 150px; }
+  .report-quantity-col { width: 72px; text-align: center; }
+  .report-money-col { width: 118px; text-align: right; }
+  .report-iva-col { width: 95px; text-align: center; }
+  .report-total-col { width: 124px; text-align: right; }
 
   /* aliases to preserve existing markup while migrating */
-  .col-ref { width: 120px; }
-  .col-producto { width: 260px; }
-  .col-cliente { width: 240px; }
+  .col-ref { width: 110px; }
+  .col-producto { width: auto; }
+  .col-cliente { width: auto; }
   .col-cantidad { width: 90px; text-align: center; }
-  .col-items { width: 80px; text-align: center; }
-  .col-money { width: 140px; text-align: right; }
-  .col-estado { width: 160px; text-align: center; }
-  .col-acciones { width: 120px; text-align: center; }
+  .col-items { width: 70px; text-align: center; }
+  .col-money { width: 120px; text-align: right; }
+  .col-estado { width: 140px; text-align: center; }
+  .col-acciones { width: 110px; text-align: center; }
 
   /* Text tokens */
   .text-text-muted { color: var(--text-muted) !important; }
@@ -441,9 +477,9 @@
     align-items: center;
     justify-content: flex-end;
     width: 100%;
-    min-width: 120px;
+    min-width: 0;
     text-align: right;
-    font-size: 18px;
+    font-size: 16px;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     font-weight: 900;
@@ -469,18 +505,56 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
     white-space: nowrap;
+  }
+
+  .table-action-cell {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .action-btn {
+    height: 40px;
+    min-width: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid rgba(227,198,106,0.25);
+    background: rgba(255,255,255,0.02);
+    color: #F2EFE6;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: all .2s ease;
+  }
+
+  .action-btn:hover {
+    border-color: #E3C66A;
+    background: rgba(227,198,106,0.08);
+  }
+
+  .delete-btn {
+    border-color: rgba(255,0,80,.25);
+    color: #ff4d6d;
+  }
+
+  .delete-btn:hover {
+    background: rgba(255,0,80,.08);
   }
 
   .pagination-premium {
     width: 100%;
     display: grid;
-    grid-template-columns: 220px 1fr 220px;
+    grid-template-columns: 190px 1fr 190px;
     align-items: center;
     gap: 16px;
-    padding: 18px 24px;
+    padding: 14px 18px;
     border-top: 1px solid rgba(227,198,106,0.12);
   }
 
@@ -488,13 +562,13 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 48px;
+    min-height: 40px;
   }
 
   .pagination-select {
-    width: 96px;
-    min-width: 96px;
-    height: 48px;
+    width: 88px;
+    min-width: 88px;
+    height: 40px;
   }
 
   /* Accent utilities */
@@ -560,13 +634,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 @media (max-width: 1024px) {
   .table-premium thead th,
   .table-header-cell {
-    padding: 0 16px;
+    padding: 0 12px;
     font-size: 10px;
   }
   .table-premium tbody td,
   .table-body-cell,
   .table-cell {
-    padding: 12px 16px;
+    padding: 10px 12px;
     font-size: 13px;
   }
 }

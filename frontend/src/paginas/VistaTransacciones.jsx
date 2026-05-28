@@ -129,32 +129,32 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
   ) : null;
 
   const columnasVenta = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
-    { key: 'producto', label: 'Producto', widthClassName: 'w-[250px]' },
-    { key: 'cliente', label: 'Cliente', widthClassName: 'w-[240px]' },
-    { key: 'cantidad', label: 'Cant.', widthClassName: 'w-[100px]', align: 'center' },
-    { key: 'items', label: 'Items', widthClassName: 'w-[90px]', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
-    { key: 'vendedor', label: 'Vendedor', widthClassName: 'w-[170px]' },
-    { key: 'acciones', label: 'Acciones', widthClassName: 'w-[120px]', align: 'center' },
+    { key: 'fecha', label: 'Fecha', widthClassName: 'sales-date-col' },
+    { key: 'producto', label: 'Producto', widthClassName: 'sales-product-col' },
+    { key: 'cliente', label: 'Cliente', widthClassName: 'sales-client-col' },
+    { key: 'cantidad', label: 'Cant.', widthClassName: 'sales-quantity-col', align: 'center' },
+    { key: 'items', label: 'Items', widthClassName: 'sales-items-col', align: 'center' },
+    { key: 'total', label: 'Total', widthClassName: 'sales-money-col', align: 'right' },
+    { key: 'vendedor', label: 'Vendedor', widthClassName: 'sales-vendor-col' },
+    { key: 'acciones', label: 'Acciones', widthClassName: 'sales-actions-col', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const columnasCompra = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
-    { key: 'producto', label: 'Producto', widthClassName: 'w-[250px]' },
-    { key: 'cantidad', label: 'Cant.', widthClassName: 'w-[100px]', align: 'center' },
-    { key: 'items', label: 'Items', widthClassName: 'w-[90px]', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
-    { key: 'usuario', label: 'Usuario', widthClassName: 'w-[170px]' },
-    { key: 'acciones', label: 'Acciones', widthClassName: 'w-[120px]', align: 'center' },
+    { key: 'fecha', label: 'Fecha', widthClassName: 'sales-date-col' },
+    { key: 'producto', label: 'Producto', widthClassName: 'sales-product-col' },
+    { key: 'cantidad', label: 'Cant.', widthClassName: 'sales-quantity-col', align: 'center' },
+    { key: 'items', label: 'Items', widthClassName: 'sales-items-col', align: 'center' },
+    { key: 'total', label: 'Total', widthClassName: 'sales-money-col', align: 'right' },
+    { key: 'usuario', label: 'Usuario', widthClassName: 'sales-vendor-col' },
+    { key: 'acciones', label: 'Acciones', widthClassName: 'sales-actions-col', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const columnasChatarra = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
-    { key: 'tipo', label: 'Tipo', widthClassName: 'w-[120px]', align: 'center' },
-    { key: 'producto', label: 'Producto', widthClassName: 'w-[250px]' },
-    { key: 'cantidad', label: 'Cant.', widthClassName: 'w-[100px]', align: 'center' },
-    { key: 'items', label: 'Items', widthClassName: 'w-[90px]', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
-    { key: 'usuario', label: 'Usuario', widthClassName: 'w-[170px]' },
+    { key: 'fecha', label: 'Fecha', widthClassName: 'sales-date-col' },
+    { key: 'tipo', label: 'Tipo', widthClassName: 'report-type-col', align: 'center' },
+    { key: 'producto', label: 'Producto', widthClassName: 'sales-product-col' },
+    { key: 'cantidad', label: 'Cant.', widthClassName: 'sales-quantity-col', align: 'center' },
+    { key: 'items', label: 'Items', widthClassName: 'sales-items-col', align: 'center' },
+    { key: 'total', label: 'Total', widthClassName: 'sales-money-col', align: 'right' },
+    { key: 'usuario', label: 'Usuario', widthClassName: 'sales-vendor-col' },
   ];
 
   const renderDesktopCell = (item, column) => {
@@ -177,7 +177,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 con_iva: Number(item.monto_iva) > 0, descuento_global: 0,
                 notas: `Venta registrada el ${formatearFecha(item.creado_en)}`,
                 items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, item.producto_codigo].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total) / Number(item.cantidad_total) : 0), descuento: 0 }],
-              } } })} className="h-10 w-10 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors flex items-center justify-center" title="Emitir factura"><FileText size={16} /></button>
+              } } })} className="action-btn !w-10 !min-w-[40px] !px-0" title="Emitir factura"><FileText size={16} /></button>
             )}
           </div>
         );
@@ -195,7 +195,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
       if (column.key === 'acciones') {
         return (
           <div className="action-cell">
-            <button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="h-10 w-10 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors flex items-center justify-center" title="Copiar factura"><FileText size={16} /></button>
+            <button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="action-btn !w-10 !min-w-[40px] !px-0" title="Copiar factura"><FileText size={16} /></button>
           </div>
         );
       }
@@ -318,7 +318,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             loading={h.cargando}
             loadingMessage="Cargando historial..."
             emptyMessage="No hay transacciones registradas"
-            minWidthClass={h.tab === 'chatarra' ? 'min-w-[1110px]' : 'min-w-[1250px]'}
+            minWidthClass={h.tab === 'venta' ? 'min-w-[1120px]' : 'min-w-[980px]'}
             renderCell={renderDesktopCell}
             footer={
               <Paginacion
