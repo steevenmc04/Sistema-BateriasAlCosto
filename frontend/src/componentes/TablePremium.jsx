@@ -90,7 +90,7 @@ export default function TablePremium({
 
   return (
     <div className={`table-shell ${className}`.trim()}>
-      {responsive ? <div className="table-scroll">{content}</div> : content}
+      {responsive ? content : content}
       {footer}
     </div>
   )
