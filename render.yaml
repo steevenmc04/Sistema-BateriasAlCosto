@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: sistema-bateriasalcosto-frontend
+    env: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://sistema-bateriasalcosto.onrender.com
+
+  - type: web
+    name: baterias-backend
+    env: node
+    region: ohio
+    plan: free
+    buildCommand: cd backend && npm ci
+    startCommand: cd backend && node servidor.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://sistema-bateriasalcosto-frontend.onrender.com
+      - key: EMPRESA_NOMBRE
+        value: BATERÍAS AL COSTO
+      - key: EMPRESA_RUC
+        sync: false
+      - key: EMPRESA_DIRECCION
+        sync: false

@@ -1,0 +1,28 @@
+{
+  "name": "sistema-baterias-backend",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node servidor.js"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.10",
+    "axios": "^1.16.1",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.5.2",
+    "jsonwebtoken": "^9.0.1",
+    "mysql2": "^3.5.2",
+    "node-fetch": "^3.3.2",
+    "node-forge": "^1.4.0",
+    "pdfkit": "^0.18.0",
+    "xml-crypto": "^6.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

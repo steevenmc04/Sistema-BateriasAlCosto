@@ -1,0 +1,14 @@
+{
+  "name": "sistema-baterias-raiz",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "start:backend": "npm start --prefix backend",
+    "build:frontend": "npm run build --prefix frontend"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
