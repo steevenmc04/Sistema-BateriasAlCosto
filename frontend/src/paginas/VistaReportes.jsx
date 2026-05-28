@@ -25,45 +25,45 @@ const VistaReportes = ({ usuario }) => {
   const puedeVer = tienePermiso(usuario, 'reportes_ver');
   const puedePdf = tienePermiso(usuario, 'reportes_pdf');
   const columnasVentas = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'report-date-col' },
-    { key: 'tipo', label: 'Tipo', widthClassName: 'report-type-col' },
-    { key: 'codigo', label: 'Código', widthClassName: 'report-code-col' },
-    { key: 'cliente', label: 'Cliente', widthClassName: 'report-client-col' },
-    { key: 'vendedor', label: 'Vendido por', widthClassName: 'report-vendor-col' },
-    { key: 'cantidad', label: 'Cant.', widthClassName: 'report-quantity-col', align: 'center' },
-    { key: 'pvp', label: 'PVP Unit.', widthClassName: 'report-money-col', align: 'right' },
-    { key: 'costo', label: 'Costo', widthClassName: 'report-money-col', align: 'right' },
-    { key: 'iva', label: 'IVA?', widthClassName: 'report-iva-col', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'report-total-col', align: 'right' },
+    { key: 'fecha', label: 'Fecha', width: '115px' },
+    { key: 'tipo', label: 'Tipo', width: '100px' },
+    { key: 'codigo', label: 'Código', width: '120px' },
+    { key: 'cliente', label: 'Cliente', width: '190px' },
+    { key: 'vendedor', label: 'Vendido por', width: '160px' },
+    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
+    { key: 'pvp', label: 'PVP Unit.', width: '120px', align: 'right' },
+    { key: 'costo', label: 'Costo', width: '120px', align: 'right' },
+    { key: 'iva', label: 'IVA?', width: '90px', align: 'center' },
+    { key: 'total', label: 'Total', width: '130px', align: 'right' },
   ];
   const columnasCompras = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'report-date-col' },
-    { key: 'marca', label: 'Marca', widthClassName: 'report-client-col' },
-    { key: 'caja', label: 'Caja', widthClassName: 'report-vendor-col' },
-    { key: 'cond', label: 'Cond.', widthClassName: 'report-iva-col' },
-    { key: 'cantidad', label: 'Cantidad', widthClassName: 'report-quantity-col', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'report-total-col', align: 'right' },
-    { key: 'proveedor', label: 'Proveedor', widthClassName: 'report-client-col' },
+    { key: 'fecha', label: 'Fecha', width: '115px' },
+    { key: 'marca', label: 'Marca', width: '190px' },
+    { key: 'caja', label: 'Caja', width: '160px' },
+    { key: 'cond', label: 'Cond.', width: '100px' },
+    { key: 'cantidad', label: 'Cantidad', width: '80px', align: 'center' },
+    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'proveedor', label: 'Proveedor' },
   ];
   const columnasChatarra = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'report-date-col' },
-    { key: 'tipo', label: 'Operación', widthClassName: 'report-type-col' },
-    { key: 'caja', label: 'Caja', widthClassName: 'report-vendor-col' },
-    { key: 'cantidad', label: 'Cantidad', widthClassName: 'report-quantity-col', align: 'center' },
-    { key: 'pu', label: 'PU', widthClassName: 'report-money-col', align: 'right' },
-    { key: 'total', label: 'Total', widthClassName: 'report-total-col', align: 'right' },
-    { key: 'contraparte', label: 'Contraparte', widthClassName: 'report-client-col' },
+    { key: 'fecha', label: 'Fecha', width: '115px' },
+    { key: 'tipo', label: 'Operación', width: '100px' },
+    { key: 'caja', label: 'Caja', width: '160px' },
+    { key: 'cantidad', label: 'Cantidad', width: '80px', align: 'center' },
+    { key: 'pu', label: 'PU', width: '120px', align: 'right' },
+    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'contraparte', label: 'Contraparte' },
   ];
   const columnasInventario = [
-    { key: 'clase', label: 'Clase', widthClassName: 'report-type-col' },
-    { key: 'ref', label: 'Ref', widthClassName: 'report-code-col' },
-    { key: 'marca', label: 'Marca', widthClassName: 'report-client-col' },
-    { key: 'caja', label: 'Caja', widthClassName: 'report-vendor-col' },
-    { key: 'cantidad', label: 'Cantidad', widthClassName: 'report-quantity-col', align: 'center' },
-    { key: 'costo', label: 'Costo Unit.', widthClassName: 'report-money-col', align: 'right' },
-    { key: 'pvp', label: 'PVP Sugerido', widthClassName: 'report-money-col', align: 'right' },
-    { key: 'stock', label: 'Stock Valorizado', widthClassName: 'report-total-col', align: 'right' },
-    { key: 'estado', label: 'Estado', widthClassName: 'inventory-status-col', align: 'center' },
+    { key: 'clase', label: 'Clase', width: '100px' },
+    { key: 'ref', label: 'Ref', width: '120px' },
+    { key: 'marca', label: 'Marca', width: '190px' },
+    { key: 'caja', label: 'Caja', width: '160px' },
+    { key: 'cantidad', label: 'Cantidad', width: '80px', align: 'center' },
+    { key: 'costo', label: 'Costo Unit.', width: '120px', align: 'right' },
+    { key: 'pvp', label: 'PVP Sugerido', width: '120px', align: 'right' },
+    { key: 'stock', label: 'Stock Valorizado', width: '130px', align: 'right' },
+    { key: 'estado', label: 'Estado', width: '130px', align: 'center' },
   ];
 
   const renderDesktopCell = (r, column) => {
@@ -254,12 +254,12 @@ const VistaReportes = ({ usuario }) => {
             emptyMessage="No hay datos para el rango seleccionado."
             minWidthClass={
               vp.tipo.startsWith('ventas')
-                ? 'min-w-[1200px]'
+                ? 'min-w-[1225px]'
                 : vp.tipo === 'compras'
-                  ? 'min-w-[960px]'
+                  ? 'min-w-[970px]'
                   : vp.tipo === 'chatarra'
-                    ? 'min-w-[900px]'
-                    : 'min-w-[1080px]'
+                    ? 'min-w-[905px]'
+                    : 'min-w-[1150px]'
             }
             renderCell={renderDesktopCell}
           />

@@ -57,11 +57,12 @@ const VistaFacturas = ({ usuario }) => {
 
   const [formConfig, setFormConfig] = useState({});
   const columnasFacturas = [
-    { key: 'numero', label: 'N° Factura · Fecha', widthClassName: 'invoice-number-col' },
-    { key: 'cliente', label: 'Cliente', widthClassName: 'invoice-client-col' },
-    { key: 'total', label: 'Total', widthClassName: 'invoice-money-col', align: 'right' },
-    { key: 'estado', label: 'Estado', widthClassName: 'invoice-status-col', align: 'center' },
-    { key: 'acciones', label: 'Acciones', widthClassName: 'invoice-actions-col', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'numero', label: 'N° Factura', width: '130px' },
+    { key: 'fecha', label: 'Fecha', width: '110px' },
+    { key: 'cliente', label: 'Cliente' },
+    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'estado', label: 'Estado', width: '130px', align: 'center' },
+    { key: 'acciones', label: 'Acciones', width: '130px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const abrirConfigEmpresa = () => {
     setFormConfig(configEmpresa || { razon_social: '', ruc: '', direccion: '', telefono: '', email: '', ciudad: 'Guayaquil', pais: 'Ecuador', prefijo_factura: 'FAC', iva_porcentaje: 15 });
@@ -135,13 +136,9 @@ const VistaFacturas = ({ usuario }) => {
           minWidthClass="min-w-[860px]"
           renderCell={(f, column) => {
             if (column.key === 'numero') {
-              return (
-                <>
-                  <div className="cell-main">{f.numero_factura}</div>
-                  <div className="cell-sub">{new Date(f.fecha_emision).toLocaleDateString()}</div>
-                </>
-              );
+              return <div className="cell-main">{f.numero_factura}</div>;
             }
+            if (column.key === 'fecha') return <span className="cell-main">{new Date(f.fecha_emision).toLocaleDateString()}</span>;
             if (column.key === 'cliente') {
               return (
                 <>

@@ -173,7 +173,7 @@
   }
   .table-premium {
     width: 100%;
-    min-width: 920px;
+    min-width: max-content;
     table-layout: fixed;
     border-collapse: collapse;
   }
@@ -192,21 +192,21 @@
     table-layout: fixed;
   }
   .table-premium th {
-    height: 52px;
+    height: 50px;
     padding: 0 14px;
     font-size: 11px;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #E3C66A;
     font-weight: 800;
-    border-bottom: 1px solid rgba(227,198,106,0.12);
+    border-bottom: 1px solid rgba(227,198,106,0.15);
     background: #101010;
     text-align: left;
     white-space: nowrap;
     vertical-align: middle;
   }
   .table-premium tbody tr {
-    height: 64px;
+    height: 62px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     transition: background 0.2s ease;
   }
@@ -214,6 +214,7 @@
     background: rgba(255,255,255,0.02);
   }
   .table-premium td {
+    height: 62px;
     padding: 10px 14px;
     vertical-align: middle;
     color: #F2EFE6;
@@ -365,10 +366,10 @@
   }
 
   .table-header-cell {
-    height: 52px;
+    height: 50px;
     padding: 0 14px;
     font-size: 11px;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #E3C66A;
     font-weight: 800;
@@ -378,6 +379,7 @@
   }
   .table-body-cell,
   .table-cell {
+    height: 62px;
     padding: 10px 14px;
     font-size: 14px;
     line-height: 1.25;
@@ -398,13 +400,19 @@
     color: #F2EFE6;
     font-weight: 800;
     line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .cell-sub {
-    color: rgba(242,239,230,0.7);
+    color: rgba(242,239,230,0.72);
     font-size: 11px;
     line-height: 1.2;
     margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .cell-center { text-align: center; }
@@ -473,12 +481,7 @@
   .text-error { color: var(--error) !important; }
 
   .money-cell {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    width: 100%;
-    min-width: 0;
-    text-align: right;
+    display: block;
     font-size: 16px;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
@@ -486,6 +489,7 @@
     color: #00E676;
     line-height: 1;
     white-space: nowrap;
+    text-align: right;
   }
 
   .money-header {
@@ -505,8 +509,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 6px;
-    width: 100%;
+    gap: 8px;
     white-space: nowrap;
   }
 
@@ -516,9 +519,9 @@
   }
 
   .action-btn {
-    height: 40px;
-    min-width: 40px;
-    padding: 0 14px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0 12px;
     border-radius: 12px;
     display: inline-flex;
     align-items: center;
@@ -551,11 +554,11 @@
   .pagination-premium {
     width: 100%;
     display: grid;
-    grid-template-columns: 190px 1fr 190px;
+    grid-template-columns: 220px 1fr 220px;
     align-items: center;
     gap: 16px;
     padding: 14px 18px;
-    border-top: 1px solid rgba(227,198,106,0.12);
+    border-top: 1px solid rgba(227,198,106,0.15);
   }
 
   .pagination-group {

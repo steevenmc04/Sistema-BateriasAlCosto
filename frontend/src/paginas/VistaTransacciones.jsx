@@ -129,32 +129,32 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
   ) : null;
 
   const columnasVenta = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'sales-date-col' },
-    { key: 'producto', label: 'Producto', widthClassName: 'sales-product-col' },
-    { key: 'cliente', label: 'Cliente', widthClassName: 'sales-client-col' },
-    { key: 'cantidad', label: 'Cant.', widthClassName: 'sales-quantity-col', align: 'center' },
-    { key: 'items', label: 'Items', widthClassName: 'sales-items-col', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'sales-money-col', align: 'right' },
-    { key: 'vendedor', label: 'Vendedor', widthClassName: 'sales-vendor-col' },
-    { key: 'acciones', label: 'Acciones', widthClassName: 'sales-actions-col', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'fecha', label: 'Fecha', width: '120px' },
+    { key: 'producto', label: 'Producto', width: '220px' },
+    { key: 'cliente', label: 'Cliente', width: '220px' },
+    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
+    { key: 'items', label: 'Items', width: '80px', align: 'center' },
+    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'vendedor', label: 'Vendedor', width: '160px' },
+    { key: 'acciones', label: 'Acciones', width: '90px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const columnasCompra = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'sales-date-col' },
-    { key: 'producto', label: 'Producto', widthClassName: 'sales-product-col' },
-    { key: 'cantidad', label: 'Cant.', widthClassName: 'sales-quantity-col', align: 'center' },
-    { key: 'items', label: 'Items', widthClassName: 'sales-items-col', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'sales-money-col', align: 'right' },
-    { key: 'usuario', label: 'Usuario', widthClassName: 'sales-vendor-col' },
-    { key: 'acciones', label: 'Acciones', widthClassName: 'sales-actions-col', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'fecha', label: 'Fecha', width: '120px' },
+    { key: 'producto', label: 'Producto', width: '220px' },
+    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
+    { key: 'items', label: 'Items', width: '80px', align: 'center' },
+    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'usuario', label: 'Usuario', width: '160px' },
+    { key: 'acciones', label: 'Acciones', width: '90px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const columnasChatarra = [
-    { key: 'fecha', label: 'Fecha', widthClassName: 'sales-date-col' },
-    { key: 'tipo', label: 'Tipo', widthClassName: 'report-type-col', align: 'center' },
-    { key: 'producto', label: 'Producto', widthClassName: 'sales-product-col' },
-    { key: 'cantidad', label: 'Cant.', widthClassName: 'sales-quantity-col', align: 'center' },
-    { key: 'items', label: 'Items', widthClassName: 'sales-items-col', align: 'center' },
-    { key: 'total', label: 'Total', widthClassName: 'sales-money-col', align: 'right' },
-    { key: 'usuario', label: 'Usuario', widthClassName: 'sales-vendor-col' },
+    { key: 'fecha', label: 'Fecha', width: '120px' },
+    { key: 'tipo', label: 'Tipo', width: '100px', align: 'center' },
+    { key: 'producto', label: 'Producto', width: '220px' },
+    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
+    { key: 'items', label: 'Items', width: '80px', align: 'center' },
+    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'usuario', label: 'Usuario', width: '160px' },
   ];
 
   const renderDesktopCell = (item, column) => {
@@ -165,7 +165,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
       if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
       if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
       if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-      if (column.key === 'vendedor') return <span className="cell-main text-[12px] uppercase truncate block">{item.usuario_nombre}</span>;
+      if (column.key === 'vendedor') return <span className="cell-main text-[12px] uppercase block">{item.usuario_nombre}</span>;
       if (column.key === 'acciones') {
         return (
           <div className="action-cell">
@@ -191,7 +191,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
       if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
       if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
       if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-      if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase truncate block">{item.usuario_nombre}</span>;
+      if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase block">{item.usuario_nombre}</span>;
       if (column.key === 'acciones') {
         return (
           <div className="action-cell">
@@ -208,7 +208,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
     if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
     if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
     if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
-    if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase truncate block">{item.usuario_nombre}</span>;
+    if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase block">{item.usuario_nombre}</span>;
     return null;
   };
 
@@ -318,7 +318,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             loading={h.cargando}
             loadingMessage="Cargando historial..."
             emptyMessage="No hay transacciones registradas"
-            minWidthClass={h.tab === 'venta' ? 'min-w-[1120px]' : 'min-w-[980px]'}
+            minWidthClass={h.tab === 'venta' ? 'min-w-[1110px]' : h.tab === 'compra' ? 'min-w-[900px]' : 'min-w-[900px]'}
             renderCell={renderDesktopCell}
             footer={
               <Paginacion

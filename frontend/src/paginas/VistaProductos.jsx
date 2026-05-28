@@ -59,20 +59,20 @@ const VistaProductos = ({ usuario }) => {
   const puedeEditar = tienePermiso(usuario, 'inventario_editar');
   const puedeEliminar = tienePermiso(usuario, 'inventario_eliminar');
   const columnasBaterias = useMemo(() => ([
-    { key: 'referencia', label: 'Referencia', widthClassName: 'inventory-reference-col' },
-    { key: 'producto', label: 'Marca · Caja · Descripción', widthClassName: 'inventory-product-col' },
-    { key: 'cantidad', label: 'Cantidad', widthClassName: 'inventory-quantity-col', align: 'center' },
-    { key: 'precio', label: 'Precio USD', widthClassName: 'inventory-money-col', align: 'right' },
-    { key: 'estado', label: 'Estado stock', widthClassName: 'inventory-status-col', align: 'center' },
-    { key: 'acciones', label: 'Acciones', widthClassName: 'inventory-actions-col', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'referencia', label: 'Referencia', width: '120px' },
+    { key: 'producto', label: 'Marca · Caja · Descripción' },
+    { key: 'cantidad', label: 'Cantidad', width: '110px', align: 'center' },
+    { key: 'precio', label: 'Precio USD', width: '130px', align: 'right' },
+    { key: 'estado', label: 'Estado stock', width: '150px', align: 'center' },
+    { key: 'acciones', label: 'Acciones', width: '130px', align: 'center', cellClassName: 'table-action-cell' },
   ]), []);
 
   const columnasVarios = useMemo(() => ([
-    { key: 'referencia', label: 'Referencia', widthClassName: 'inventory-reference-col' },
-    { key: 'nombre', label: 'Nombre', widthClassName: 'inventory-product-col' },
-    { key: 'cantidad', label: 'Cantidad', widthClassName: 'inventory-quantity-col', align: 'center' },
-    { key: 'precio', label: 'Precio', widthClassName: 'inventory-money-col', align: 'right' },
-    { key: 'acciones', label: 'Acciones', widthClassName: 'inventory-actions-col', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'referencia', label: 'Referencia', width: '120px' },
+    { key: 'nombre', label: 'Nombre' },
+    { key: 'cantidad', label: 'Cantidad', width: '110px', align: 'center' },
+    { key: 'precio', label: 'Precio', width: '130px', align: 'right' },
+    { key: 'acciones', label: 'Acciones', width: '130px', align: 'center', cellClassName: 'table-action-cell' },
   ]), []);
 
   if (!tienePermiso(usuario, 'inventario_ver')) {
@@ -142,16 +142,16 @@ const VistaProductos = ({ usuario }) => {
             loading={cargando}
             loadingMessage="Cargando inventario…"
             emptyMessage="No hay registros en inventario."
-            minWidthClass={tab === 'baterias' ? 'min-w-[920px]' : 'min-w-[820px]'}
+            minWidthClass={tab === 'baterias' ? 'min-w-[860px]' : 'min-w-[780px]'}
             renderCell={(row, column) => {
               if (tab === 'baterias') {
                 if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
                 if (column.key === 'producto') return (
-                  <>
-                    <div className="cell-main truncate">{row.marca}</div>
-                    <div className="cell-sub uppercase tracking-widest truncate">{row.tipo_caja}</div>
-                    <div className="cell-sub truncate">{row.condicion}</div>
-                  </>
+                  <div className="max-w-[380px]">
+                    <div className="cell-main">{row.marca}</div>
+                    <div className="cell-sub uppercase tracking-widest">{row.tipo_caja}</div>
+                    <div className="cell-sub">{row.condicion}</div>
+                  </div>
                 );
                 if (column.key === 'cantidad') return <span className="cell-main">{row.cantidad}</span>;
                 if (column.key === 'precio') return <span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span>;
@@ -177,10 +177,10 @@ const VistaProductos = ({ usuario }) => {
 
               if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
               if (column.key === 'nombre') return (
-                <>
-                  <div className="cell-main truncate">{row.nombre}</div>
-                  <div className="cell-sub truncate">{row.descripcion}</div>
-                </>
+                <div className="max-w-[380px]">
+                  <div className="cell-main">{row.nombre}</div>
+                  <div className="cell-sub">{row.descripcion}</div>
+                </div>
               );
               if (column.key === 'cantidad') return <span className="cell-main">{row.cantidad}</span>;
               if (column.key === 'precio') return <span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span>;

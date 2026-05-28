@@ -23,7 +23,11 @@ export default function TablePremium({
     <table className={`table-premium ${minWidthClass} ${tableClassName}`.trim()}>
       <colgroup>
         {columns.map((column) => (
-          <col key={`col-${column.key || column.label}`} className={column.widthClassName || ''} />
+          <col
+            key={`col-${column.key || column.label}`}
+            className={column.widthClassName || ''}
+            style={column.width ? { width: column.width } : undefined}
+          />
         ))}
       </colgroup>
       <thead>
