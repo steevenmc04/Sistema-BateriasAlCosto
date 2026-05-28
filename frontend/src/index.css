@@ -344,10 +344,31 @@
   .text-warning { color: var(--warning) !important; }
   .text-error { color: var(--error) !important; }
 
+  .money-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 120px;
+    width: 100%;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    font-weight: 700;
+    color: #00E676;
+    white-space: nowrap;
+  }
+
+  .money-header {
+    text-align: right;
+    padding-right: 16px;
+  }
+
   .money-value {
-    color: var(--success) !important;
+    color: #00E676 !important;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    white-space: nowrap;
   }
 
   /* Accent utilities */

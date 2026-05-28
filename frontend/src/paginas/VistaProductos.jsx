@@ -118,25 +118,25 @@ const VistaProductos = ({ usuario }) => {
       <div className="table-premium">
         {/* DESKTOP TABLE */}
          <div className="hidden md:block">
-          <table className="w-full text-left">
+          <table className="w-full text-left table-fixed">
             <thead>
                <tr className="table-header-cell">
                 {tab === 'baterias' ? (
                   <>
-                    <th className="table-header-cell">Referencia</th>
+                    <th className="table-header-cell w-[120px]">Referencia</th>
                     <th className="table-header-cell">Marca · Caja · Descripción</th>
-                    <th className="table-header-cell text-center">Cantidad</th>
-                    <th className="table-header-cell text-right">Precio USD</th>
-                    <th className="table-header-cell text-center">Estado stock</th>
-                    <th className="table-header-cell text-right">Acciones</th>
+                    <th className="table-header-cell text-center w-[100px]">Cantidad</th>
+                    <th className="table-header-cell money-header w-[140px]">Precio USD</th>
+                    <th className="table-header-cell text-center w-[150px]">Estado stock</th>
+                    <th className="table-header-cell text-right w-[140px]">Acciones</th>
                   </>
                  ) : (
                    <>
-                     <th className="table-header-cell">Referencia</th>
+                     <th className="table-header-cell w-[120px]">Referencia</th>
                      <th className="table-header-cell">Nombre</th>
-                     <th className="table-header-cell text-center">Cantidad</th>
-                     <th className="table-header-cell text-right">Precio</th>
-                     <th className="table-header-cell text-right">Acciones</th>
+                     <th className="table-header-cell text-center w-[100px]">Cantidad</th>
+                     <th className="table-header-cell money-header w-[140px]">Precio</th>
+                     <th className="table-header-cell text-right w-[140px]">Acciones</th>
                    </>
                  )}
               </tr>
@@ -154,7 +154,7 @@ const VistaProductos = ({ usuario }) => {
                        <div className="text-[10px] text-text-muted">{row.condicion}</div>
                      </td>
                      <td className="table-body-cell text-center font-black text-lg md:text-xl text-text-primary">{row.cantidad}</td>
-                     <td className="table-body-cell text-right"><span className="money-value">${safeNumber(row.precio).toFixed(2)}</span></td>
+                     <td className="table-body-cell"><span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span></td>
                     <td className="table-body-cell text-center">
                       {/* New premium badge */}
                       <div className="flex items-center justify-center">
@@ -180,7 +180,7 @@ const VistaProductos = ({ usuario }) => {
                        <div className="text-[10px] text-text-muted truncate max-w-[200px]">{row.descripcion}</div>
                      </td>
                      <td className="table-body-cell text-center font-black text-text-primary">{row.cantidad}</td>
-                     <td className="table-body-cell text-right"><span className="money-value">${safeNumber(row.precio).toFixed(2)}</span></td>
+                     <td className="table-body-cell"><span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span></td>
                     <td className="table-body-cell">
                       <div className="flex justify-end items-center gap-2">
                         {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="px-3 py-2 text-[13px] font-black uppercase tracking-wide rounded-xl bg-black border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10 transition-all shadow-glow-sm">Editar</button>}

@@ -118,14 +118,14 @@ const VistaFacturas = ({ usuario }) => {
       {/* DESKTOP TABLE */}
         <div className="hidden md:block table-premium">
         <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-[12px] text-text-muted">
+          <table className="min-w-full text-left text-[12px] text-text-muted table-fixed">
             <thead className="bg-white/[0.02] text-[10px] font-black uppercase text-text-muted tracking-[0.2em]">
               <tr>
-                <th className="px-6 py-4">Nº Factura · Fecha</th>
+                <th className="px-6 py-4 w-[180px]">Nº Factura · Fecha</th>
                 <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4 text-right">Total</th>
-                <th className="px-6 py-4 text-center">Estado</th>
-                <th className="px-6 py-4 text-center">Acciones</th>
+                <th className="px-6 py-4 money-header w-[140px]">Total</th>
+                <th className="px-6 py-4 text-center w-[150px]">Estado</th>
+                <th className="px-6 py-4 text-center w-[180px]">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2a2a2a]/20">
@@ -144,7 +144,7 @@ const VistaFacturas = ({ usuario }) => {
                       <div className="text-text-primary text-sm truncate max-w-[200px]">{f.cliente_nombre}</div>
                       <div className="text-[10px] text-text-muted truncate">{f.cliente_cedula_ruc || 'Consumidor Final'}</div>
                     </td>
-                    <td className="table-body-cell text-right"><span className="money-value">${safeNumber(f.total).toFixed(2)}</span></td>
+                    <td className="table-body-cell"><span className="money-cell">${safeNumber(f.total).toFixed(2)}</span></td>
                     <td className="px-6 py-4 text-center">
                       <span className={`badge ${f.estado === 'emitida' ? 'badge-success' : 'badge-danger'}`}>{f.estado}</span>
                       {f.sri_estado === 'AUTORIZADA' && <span className="badge badge-success ml-1">SRI OK</span>}

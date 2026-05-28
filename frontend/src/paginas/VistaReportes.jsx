@@ -138,13 +138,29 @@ const VistaReportes = ({ usuario }) => {
 
         {/* DESKTOP TABLE */}
         <div className="hidden md:block table-premium">
-          <table className="min-w-full text-left text-[12px] text-text-muted">
+          <table className="min-w-full text-left text-[12px] text-text-muted table-fixed">
             <thead className="bg-white/[0.02]">
               <tr>
-                {vp.tipo.startsWith('ventas') && ['Fecha','Tipo','Código','Cliente','Vendido por','Cant.','PVP Unit.','Costo','IVA?','Total'].map(t => <th key={t} className="table-header-cell">{t}</th>)}
-                {vp.tipo === 'compras' && ['Fecha','Marca','Caja','Cond','Cantidad','Total','Proveedor'].map(t => <th key={t} className="table-header-cell">{t}</th>)}
-                {vp.tipo === 'chatarra' && ['Fecha','Operación','Caja','Cantidad','PU','Total','Contraparte'].map(t => <th key={t} className="table-header-cell">{t}</th>)}
-                {vp.tipo === 'inventario' && ['Clase','Ref','Marca','Caja','Cantidad','Costo Unit.','PVP Sugerido','Stock Valorizado','Estado'].map(t => <th key={t} className="table-header-cell">{t}</th>)}
+                {vp.tipo.startsWith('ventas') && ['Fecha','Tipo','Código','Cliente','Vendido por','Cant.','PVP Unit.','Costo','IVA?','Total'].map(t => (
+                  <th key={t} className={`table-header-cell ${['PVP Unit.','Costo','Total'].includes(t) ? 'money-header w-[140px]' : ''}`}>
+                    {t}
+                  </th>
+                ))}
+                {vp.tipo === 'compras' && ['Fecha','Marca','Caja','Cond','Cantidad','Total','Proveedor'].map(t => (
+                  <th key={t} className={`table-header-cell ${t === 'Total' ? 'money-header w-[140px]' : ''}`}>
+                    {t}
+                  </th>
+                ))}
+                {vp.tipo === 'chatarra' && ['Fecha','Operación','Caja','Cantidad','PU','Total','Contraparte'].map(t => (
+                  <th key={t} className={`table-header-cell ${['PU','Total'].includes(t) ? 'money-header w-[140px]' : ''}`}>
+                    {t}
+                  </th>
+                ))}
+                {vp.tipo === 'inventario' && ['Clase','Ref','Marca','Caja','Cantidad','Costo Unit.','PVP Sugerido','Stock Valorizado','Estado'].map(t => (
+                  <th key={t} className={`table-header-cell ${['Costo Unit.','PVP Sugerido','Stock Valorizado'].includes(t) ? 'money-header w-[140px]' : ''}`}>
+                    {t}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2a2a2a]/20">
@@ -161,10 +177,10 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell">{r.nombre_cliente}</td>
                         <td className="table-body-cell">{r.usuario_nombre || '-'}</td>
                         <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
-                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.costo_unitario || 0).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.costo_unitario || 0).toFixed(2)}</span></td>
                         <td className="table-body-cell">{safeNumber(r.con_iva) === 1 ? 'Con IVA' : 'Sin IVA'}</td>
-                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.total).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
                       </>
                     )}
                     {vp.tipo === 'compras' && (
@@ -174,7 +190,7 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell">{r.tipo_caja}</td>
                         <td className="table-body-cell">{r.condicion}</td>
                         <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.total).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
                         <td className="table-body-cell">{r.proveedor}</td>
                       </>
                     )}
@@ -184,8 +200,8 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell uppercase">{r.tipo_operacion}</td>
                         <td className="table-body-cell">{r.tipo_caja}</td>
                         <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
-                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.total).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.total).toFixed(2)}</span></td>
                         <td className="table-body-cell">{r.nombre_cliente_proveedor}</td>
                       </>
                     )}
@@ -196,9 +212,9 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell">{r.marca}</td>
                         <td className="table-body-cell">{r.tipo_caja || '—'}</td>
                         <td className="table-body-cell font-black">{r.cantidad}</td>
-                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.precio).toFixed(2)}</span></td>
-                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</span></td>
-                        <td className="table-body-cell"><span className="money-value">${(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-cell">${(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2)}</span></td>
                         <td className="table-body-cell">
                           <div className="flex items-center">
                             <Badge cantidad={r.cantidad} size="sm">
