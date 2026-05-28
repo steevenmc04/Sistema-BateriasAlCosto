@@ -103,8 +103,8 @@ const VistaReportes = ({ usuario }) => {
               </p>
             </div>
           </div>
-          <div className="text-right text-yellow-100 font-black text-xl">
-            {vp.totales?.monto_usd != null && <p>TOTAL USD {safeNumber(vp.totales.monto_usd).toFixed(2)}</p>}
+          <div className="text-right font-black text-xl">
+            {vp.totales?.monto_usd != null && <p className="money-value">TOTAL USD {safeNumber(vp.totales.monto_usd).toFixed(2)}</p>}
             {vp.totales?.cantidad != null && <p className="text-[11px] text-text-muted">Piezas · {vp.totales.cantidad}</p>}
             {vp.totales?.cantidad_unidades != null && <p className="text-[11px] text-text-muted">Piezas combinadas · {vp.totales.cantidad_unidades}</p>}
           </div>
@@ -114,7 +114,7 @@ const VistaReportes = ({ usuario }) => {
           <div className="grid grid-cols-2 gap-4 p-6 border-b border-border-default bg-white/[0.01]">
             <div className="py-2">
               <span className="text-[9px] font-black uppercase tracking-wider text-text-muted">Total Ventas</span>
-              <p className="text-xl font-black text-white mt-1">${safeNumber(vp.totales.monto_usd || 0).toFixed(2)}</p>
+              <p className="money-value text-xl mt-1">${safeNumber(vp.totales.monto_usd || 0).toFixed(2)}</p>
             </div>
             <div className="py-2">
               <span className="text-[9px] font-black uppercase tracking-wider text-text-muted">Articulos vendidos</span>
@@ -131,7 +131,7 @@ const VistaReportes = ({ usuario }) => {
             </div>
             <div className="py-2">
               <span className="text-[9px] font-black uppercase tracking-wider text-text-muted">Stock Valorizado</span>
-              <p className="text-xl font-black text-yellow-100 mt-1">${safeNumber(vp.totales.monto_usd || 0).toFixed(2)}</p>
+              <p className="money-value text-xl mt-1">${safeNumber(vp.totales.monto_usd || 0).toFixed(2)}</p>
             </div>
           </div>
         )}
@@ -161,10 +161,10 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell">{r.nombre_cliente}</td>
                         <td className="table-body-cell">{r.usuario_nombre || '-'}</td>
                         <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell">${safeNumber(r.precio_unitario).toFixed(2)}</td>
-                        <td className="table-body-cell text-text-muted">${safeNumber(r.costo_unitario || 0).toFixed(2)}</td>
+                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.costo_unitario || 0).toFixed(2)}</span></td>
                         <td className="table-body-cell">{safeNumber(r.con_iva) === 1 ? 'Con IVA' : 'Sin IVA'}</td>
-                        <td className="table-body-cell text-yellow-100 font-black">${safeNumber(r.total).toFixed(2)}</td>
+                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.total).toFixed(2)}</span></td>
                       </>
                     )}
                     {vp.tipo === 'compras' && (
@@ -174,7 +174,7 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell">{r.tipo_caja}</td>
                         <td className="table-body-cell">{r.condicion}</td>
                         <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell text-yellow-100 font-black">${safeNumber(r.total).toFixed(2)}</td>
+                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.total).toFixed(2)}</span></td>
                         <td className="table-body-cell">{r.proveedor}</td>
                       </>
                     )}
@@ -184,8 +184,8 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell uppercase">{r.tipo_operacion}</td>
                         <td className="table-body-cell">{r.tipo_caja}</td>
                         <td className="table-body-cell text-center font-black">{r.cantidad}</td>
-                        <td className="table-body-cell">${safeNumber(r.precio_unitario).toFixed(2)}</td>
-                        <td className="table-body-cell text-warning font-black">${safeNumber(r.total).toFixed(2)}</td>
+                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.precio_unitario).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.total).toFixed(2)}</span></td>
                         <td className="table-body-cell">{r.nombre_cliente_proveedor}</td>
                       </>
                     )}
@@ -196,9 +196,9 @@ const VistaReportes = ({ usuario }) => {
                         <td className="table-body-cell">{r.marca}</td>
                         <td className="table-body-cell">{r.tipo_caja || '—'}</td>
                         <td className="table-body-cell font-black">{r.cantidad}</td>
-                        <td className="table-body-cell">${safeNumber(r.precio).toFixed(2)}</td>
-                        <td className="table-body-cell">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</td>
-                        <td className="table-body-cell text-yellow-100 font-bold">${(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2)}</td>
+                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.precio).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-value">${safeNumber(r.precio_venta_sugerido || 0).toFixed(2)}</span></td>
+                        <td className="table-body-cell"><span className="money-value">${(safeNumber(r.cantidad || 0) * safeNumber(r.precio || 0)).toFixed(2)}</span></td>
                         <td className="table-body-cell">
                           <div className="flex items-center">
                             <Badge cantidad={r.cantidad} size="sm">
@@ -229,7 +229,7 @@ const VistaReportes = ({ usuario }) => {
                     <p className="text-[10px] text-yellow-100 font-black uppercase tracking-tighter mt-0.5">{vp.tipo === 'ventas' ? obtenerCodigoManual(r) : (r.ref || '-')}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-yellow-100 font-black text-lg">${safeNumber(r.total || r.precio || 0).toFixed(2)}</p>
+                    <p className="money-value text-lg">${safeNumber(r.total || r.precio || 0).toFixed(2)}</p>
                     <p className="text-[9px] text-text-muted uppercase font-bold">{r.cantidad} uds</p>
                   </div>
                 </div>

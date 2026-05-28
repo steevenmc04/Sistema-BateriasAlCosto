@@ -6,20 +6,26 @@
 
 @layer base {
   :root {
+    --color-bg-main: #0A0A0A;
+    --color-bg-surface: #262626;
+    --color-gold-dark: #8A6F2A;
+    --color-gold: #E3C66A;
+    --color-text-main: #F2EFE6;
+
     /* Premium palette variables */
-    --bg-primary: #000000; /* black */
-    --bg-zinc-950: #0b0b0d;
-    --bg-zinc-900: #111216;
-    --bg-card: #0b0b0b;
-    --accent: #f5b301; /* gold */
-    --accent-400: #ffcf66;
-    --text-white: #ffffff;
-    --text-yellow-100: #f9e9b6;
-    --text-zinc-300: #d4d4d8;
-    --text-muted: #9BA7C7;
-    --border-default: rgba(245,179,1,0.12); /* border-yellow-500/20 */
-    --border-strong: rgba(245,179,1,0.18); /* border-yellow-400/30 */
-    --success: #00e676;
+    --bg-primary: #0A0A0A;
+    --bg-zinc-950: #0A0A0A;
+    --bg-zinc-900: #262626;
+    --bg-card: #262626;
+    --accent: #E3C66A;
+    --accent-400: #F2EFE6;
+    --text-white: #F2EFE6;
+    --text-yellow-100: #E3C66A;
+    --text-zinc-300: #E6DDC7;
+    --text-muted: #D6CCB4;
+    --border-default: rgba(138,111,42,0.45);
+    --border-strong: rgba(227,198,106,0.55);
+    --success: #2DD36F;
     --warning: #ffb300;
     --error: #ff5252;
   }
@@ -337,6 +343,12 @@
   .text-success { color: var(--success) !important; }
   .text-warning { color: var(--warning) !important; }
   .text-error { color: var(--error) !important; }
+
+  .money-value {
+    color: var(--success) !important;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
 
   /* Accent utilities */
   /* Deprecated: prefer text-yellow-100 for absolute consistency */

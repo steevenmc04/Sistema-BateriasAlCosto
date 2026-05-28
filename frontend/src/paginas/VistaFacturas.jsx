@@ -144,7 +144,7 @@ const VistaFacturas = ({ usuario }) => {
                       <div className="text-text-primary text-sm truncate max-w-[200px]">{f.cliente_nombre}</div>
                       <div className="text-[10px] text-text-muted truncate">{f.cliente_cedula_ruc || 'Consumidor Final'}</div>
                     </td>
-                    <td className="table-body-cell text-right font-bold text-yellow-100">${safeNumber(f.total).toFixed(2)}</td>
+                    <td className="table-body-cell text-right"><span className="money-value">${safeNumber(f.total).toFixed(2)}</span></td>
                     <td className="px-6 py-4 text-center">
                       <span className={`badge ${f.estado === 'emitida' ? 'badge-success' : 'badge-danger'}`}>{f.estado}</span>
                       {f.sri_estado === 'AUTORIZADA' && <span className="badge badge-success ml-1">SRI OK</span>}
@@ -191,7 +191,7 @@ const VistaFacturas = ({ usuario }) => {
                   <p className="text-[10px] text-text-muted uppercase tracking-widest">{new Date(f.fecha_emision).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-yellow-100 font-black text-lg">${safeNumber(f.total).toFixed(2)}</p>
+                  <p className="money-value text-lg">${safeNumber(f.total).toFixed(2)}</p>
                   <span className={`badge mt-1 ${f.estado === 'emitida' ? 'badge-success' : 'badge-danger'}`}>{f.estado}</span>
                 </div>
               </div>
@@ -308,9 +308,9 @@ const VistaFacturas = ({ usuario }) => {
                              <div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted text-xs">$</span>
                               <input type="number" min="0" step="0.01" className="input-premium pl-5 text-right h-10" value={item.descuento} onChange={(e) => actualizarItem(index, 'descuento', e.target.value)} /></div>
                           </div>
-                           <div className="text-right font-black text-yellow-100 text-sm tabular-nums">
+                           <div className="text-right text-sm tabular-nums">
                              <label className="md:hidden text-[9px] font-black uppercase text-text-muted block mb-1">Subtotal</label>
-                            ${(safeNumber(item.cantidad) * safeNumber(item.precio_unitario) - safeNumber(item.descuento)).toFixed(2)}
+                            <span className="money-value">${(safeNumber(item.cantidad) * safeNumber(item.precio_unitario) - safeNumber(item.descuento)).toFixed(2)}</span>
                           </div>
                            <div className="flex justify-end"><button onClick={() => eliminarItem(index)} className="flex items-center justify-center w-12 h-12 md:w-8 md:h-8 rounded-xl text-error bg-error/10 md:bg-transparent hover:bg-error/10 transition-all"><Trash2 size={18} /></button></div>
                         </div>
@@ -331,23 +331,23 @@ const VistaFacturas = ({ usuario }) => {
                      <textarea className="input-premium h-24 resize-none mt-2" placeholder="Agregue observaciones de la factura" value={formFactura.notas} onChange={(e) => setFormFactura({...formFactura, notas: e.target.value})} />
                    </div>
                   <div className="space-y-3 py-1">
-                    <div className="flex justify-between items-center text-sm text-text-muted"><span>Subtotal:</span><span className="font-bold">${safeNumber(totalesCalculados.subtotal).toFixed(2)}</span></div>
+                    <div className="flex justify-between items-center text-sm text-text-muted"><span>Subtotal:</span><span className="money-value">${safeNumber(totalesCalculados.subtotal).toFixed(2)}</span></div>
                     <div className="flex justify-between items-center text-sm text-text-muted">
                       <span>Descuento:</span>
                       <div className="flex items-center gap-2"><span className="text-text-muted">$</span>
                         <input type="number" className="input-premium w-20 h-10 text-right" value={formFactura.descuento_global} onChange={(e) => setFormFactura({...formFactura, descuento_global: e.target.value})} /></div>
                     </div>
-                    <div className="flex justify-between items-center text-sm text-text-muted"><span>Subtotal Neto:</span><span className="font-bold">${safeNumber(totalesCalculados.base_imponible).toFixed(2)}</span></div>
+                    <div className="flex justify-between items-center text-sm text-text-muted"><span>Subtotal Neto:</span><span className="money-value">${safeNumber(totalesCalculados.base_imponible).toFixed(2)}</span></div>
                     <div className="flex justify-between items-center">
                       <label className="flex items-center gap-2 cursor-pointer text-sm text-text-muted">
                         <input type="checkbox" className="accent-accent rounded" checked={formFactura.con_iva} onChange={(e) => setFormFactura({...formFactura, con_iva: e.target.checked})} />
                         IVA ({configEmpresa?.iva_porcentaje || 15}%):
                       </label>
-                      <span className="font-bold text-text-muted">${safeNumber(totalesCalculados.monto_iva).toFixed(2)}</span>
+                      <span className="money-value">${safeNumber(totalesCalculados.monto_iva).toFixed(2)}</span>
                     </div>
                     <div className="pt-2 border-t border-border-default flex justify-between items-baseline mt-2">
                       <span className="text-[10px] font-black uppercase text-yellow-100">TOTAL</span>
-                      <span className="text-3xl font-black italic text-text-primary">${safeNumber(totalesCalculados.total).toFixed(2)}</span>
+                      <span className="money-value text-3xl">${safeNumber(totalesCalculados.total).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

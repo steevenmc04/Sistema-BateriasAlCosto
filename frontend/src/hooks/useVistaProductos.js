@@ -6,7 +6,7 @@ const vacioBateria = () => ({
   codigo: '',
   marca: '',
   marca_otro: '',
-  condicion: '',
+  condicion: 'Nueva',
   tipo_caja: '',
   tipo_caja_otro: '',
   cantidad: 1,

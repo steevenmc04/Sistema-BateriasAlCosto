@@ -2,15 +2,23 @@ import { useState, useCallback, useMemo } from 'react';
 import { safeNumber } from '../utilidades/safeNumber.js';
 
 let _keyCounter = 0;
-function uid() { return Date.now() + (++_keyCounter); }
+function uid() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  _keyCounter += 1;
+  return `tmp-${Date.now()}-${_keyCounter}`;
+}
 
 export function useOperacionMultiItem() {
   const [items, setItems] = useState([]);
   const [aplicarIVAGlobal, setAplicarIVAGlobal] = useState(false);
 
   const agregarItem = useCallback((itemData = {}) => {
+    const nextUid = itemData.uid || uid();
     const nuevoItem = {
-      id: uid(),
+      uid: nextUid,
+      id: nextUid,
       producto_id: itemData.producto_id || null,
       tipo: itemData.tipo || 'bateria',
       codigo: itemData.codigo || '',
@@ -24,7 +32,8 @@ export function useOperacionMultiItem() {
       precio_unitario: itemData.precio_unitario || '',
       descuento: 0,
 
-      codigoManual: itemData.codigoManual || '',
+      codigo_manual: itemData.codigo_manual ?? itemData.codigoManual ?? '',
+      codigoManual: itemData.codigoManual ?? itemData.codigo_manual ?? '',
       stock_disponible: itemData.stock_disponible ?? null,
       precio_actual: itemData.precio_actual ?? '',
     };
@@ -38,9 +47,13 @@ export function useOperacionMultiItem() {
 
   const actualizarCampo = useCallback((index, campo, valor) => {
     setItems(prev => {
-      const next = [...prev];
-      next[index] = { ...next[index], [campo]: valor };
-      return next;
+      return prev.map((item, i) => {
+        if (i !== index) return item;
+        const actualizado = { ...item, [campo]: valor };
+        if (campo === 'codigo_manual') actualizado.codigoManual = valor;
+        if (campo === 'codigoManual') actualizado.codigo_manual = valor;
+        return actualizado;
+      });
     });
   }, []);
 

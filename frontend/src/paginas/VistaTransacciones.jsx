@@ -73,15 +73,15 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
   const TotalesPanel = ({ totales, variante = 'normal', mostrarIVA = true }) => (
     <div className={`w-full max-w-md ml-auto space-y-3 ${variante === 'grande' ? 'md:py-2' : ''}`}>
       <div className="grid grid-cols-[1fr_auto] items-center gap-4 text-[10px] font-black uppercase tracking-widest text-text-muted">
-        <span>Subtotal</span><span className="text-text-primary tabular-nums">${safeNumber(totales.subtotal).toFixed(2)}</span>
+        <span>Subtotal</span><span className="money-value">${safeNumber(totales.subtotal).toFixed(2)}</span>
       </div>
       {mostrarIVA && (
         <div className="grid grid-cols-[1fr_auto] items-center gap-4 text-[10px] font-black uppercase tracking-widest text-text-muted">
-          <span>IVA (15%)</span><span className="text-text-primary tabular-nums">${safeNumber(totales.iva).toFixed(2)}</span>
+          <span>IVA (15%)</span><span className="money-value">${safeNumber(totales.iva).toFixed(2)}</span>
         </div>
       )}
       <div className={`grid grid-cols-[1fr_auto] items-baseline gap-4 font-black text-text-primary pt-3 mt-3 border-t border-border-default ${variante === 'grande' ? 'text-2xl md:text-3xl' : 'text-lg'}`}>
-        <span>Total</span><span className="text-yellow-100 tabular-nums">${safeNumber(totales.total).toFixed(2)}</span>
+        <span>Total</span><span className="money-value">${safeNumber(totales.total).toFixed(2)}</span>
       </div>
       <div className="text-[9px] text-text-muted font-bold uppercase tracking-wider text-right pt-1">
         {safeNumber(totales.cantidadItems)} item(s) | {Math.round(safeNumber(totales.cantidadTotal))} unidad(es)
@@ -100,7 +100,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
         </h3>
         <p className="text-text-muted text-sm">Transacción #{id} registrada correctamente.</p>
       </div>
-      <p className="text-text-primary font-black text-4xl">${safeNumber(total).toFixed(2)}</p>
+      <p className="money-value text-4xl">${safeNumber(total).toFixed(2)}</p>
       <div className="flex gap-4 pt-8 w-full max-w-md">
         <Button variant="secondary" onClick={() => h.cerrarModalExito()}>Cerrar</Button>
         {tipo === 'venta' && (
@@ -152,7 +152,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             </td>
             <td className="table-body-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
             <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-body-cell text-right font-bold text-yellow-100">${safeNumber(item.total).toFixed(2)}</td>
+            <td className="table-body-cell text-right"><span className="money-value">${safeNumber(item.total).toFixed(2)}</span></td>
             <td className="table-body-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
             <td className="table-body-cell text-center">
                 {tienePermiso(usuario, 'facturacion_emitir') && (
@@ -176,7 +176,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             </td>
             <td className="table-body-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
             <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-body-cell text-right font-bold text-yellow-100">${safeNumber(item.total).toFixed(2)}</td>
+            <td className="table-body-cell text-right"><span className="money-value">${safeNumber(item.total).toFixed(2)}</span></td>
             <td className="table-body-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
             <td className="table-body-cell text-center">
               <button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="p-2 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors" title="Copiar factura"><FileText size={16} /></button>
@@ -194,7 +194,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             </td>
             <td className="table-body-cell text-center font-black text-white">{item.cantidad_total || '-'}</td>
             <td className="table-body-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-body-cell text-right font-bold text-yellow-100">${safeNumber(item.total).toFixed(2)}</td>
+            <td className="table-body-cell text-right"><span className="money-value">${safeNumber(item.total).toFixed(2)}</span></td>
             <td className="table-body-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
           </>
         )}
@@ -215,7 +215,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 <p className="text-[10px] text-text-muted uppercase">{formatearFecha(item.creado_en)} · {item.cliente_nombre || 'Consumidor Final'}</p>
               </div>
               <div className="text-right">
-                 <p className="text-yellow-100 font-black text-lg">${safeNumber(item.total).toFixed(2)}</p>
+                 <p className="money-value text-lg">${safeNumber(item.total).toFixed(2)}</p>
                  <p className="text-[9px] text-text-muted uppercase font-black">{item.usuario_nombre}</p>
               </div>
             </div>
@@ -241,7 +241,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 <p className="text-[10px] text-text-muted uppercase">{formatearFecha(item.creado_en)}</p>
               </div>
               <div className="text-right">
-                <p className="text-yellow-100 font-black text-lg">${safeNumber(item.total).toFixed(2)}</p>
+                <p className="money-value text-lg">${safeNumber(item.total).toFixed(2)}</p>
                 <p className="text-[9px] text-text-muted uppercase font-black">{item.usuario_nombre}</p>
               </div>
             </div>
@@ -258,7 +258,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 <p className="text-[10px] text-text-muted uppercase">{formatearFecha(item.creado_en)} · {item.notas || ''}</p>
               </div>
               <div className="text-right">
-                <p className="text-yellow-100 font-black text-lg">${safeNumber(item.total).toFixed(2)}</p>
+                <p className="money-value text-lg">${safeNumber(item.total).toFixed(2)}</p>
                 <p className="text-[9px] text-text-muted uppercase font-black">{item.usuario_nombre}</p>
               </div>
             </div>
@@ -522,7 +522,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 <label className="pos-section-title">2. Resumen Final</label>
                 <div className="space-y-2">
                   <div className="grid grid-cols-[1fr_auto] items-baseline gap-4 font-black text-white text-2xl md:text-3xl">
-                    <span>Total</span><span className="text-yellow-100 tabular-nums">${safeNumber(h.compraItems.totales.total).toFixed(2)}</span>
+                    <span>Total</span><span className="money-value">${safeNumber(h.compraItems.totales.total).toFixed(2)}</span>
                   </div>
                   <div className="text-[9px] text-text-muted font-bold uppercase tracking-wider text-right pt-1">
                     {safeNumber(h.compraItems.totales.cantidadItems)} item(s) | {Math.round(safeNumber(h.compraItems.totales.cantidadTotal))} unidad(es)
@@ -617,7 +617,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 <label className="pos-section-title">2. Resumen Final</label>
                 <div className="space-y-2">
                   <div className="grid grid-cols-[1fr_auto] items-baseline gap-4 font-black text-white text-2xl md:text-3xl">
-                    <span>Total</span><span className="text-yellow-100 tabular-nums">${safeNumber(h.chatarraItems.totales.total).toFixed(2)}</span>
+                    <span>Total</span><span className="money-value">${safeNumber(h.chatarraItems.totales.total).toFixed(2)}</span>
                   </div>
                   <div className="text-[9px] text-text-muted font-bold uppercase tracking-wider text-right pt-1">
                     {safeNumber(h.chatarraItems.totales.cantidadItems)} item(s) | {Math.round(safeNumber(h.chatarraItems.totales.cantidadTotal))} unidad(es)

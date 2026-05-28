@@ -18,10 +18,10 @@ const VistaProductos = ({ usuario }) => {
     abrirNuevaBateria, abrirEditarBateria, guardarBateria, eliminarBateriaFn,
     abrirNuevoVario, abrirEditVario, guardarVario, eliminarVarFn, errorMsg,
     editBatEsNuevo, filtroStock, setFiltroStock, setModalBat, setModalVar,
-    marcasDB, tiposCajaDB, condicionesDB, baterias,
+    marcasDB, tiposCajaDB, baterias,
   } = useVistaProductos();
 
-  const condicionesLista = useMemo(() => condicionesDB, [condicionesDB]);
+  const condicionesLista = useMemo(() => ['Nueva', 'Usada'], []);
   const marcasLista = useMemo(() => [...marcasDB, 'Otros'].sort((a,b) => a.localeCompare(b)), [marcasDB]);
   const tiposCajaLista = useMemo(() => [...tiposCajaDB, 'Otro'].sort((a,b) => a.localeCompare(b)), [tiposCajaDB]);
 
@@ -154,7 +154,7 @@ const VistaProductos = ({ usuario }) => {
                        <div className="text-[10px] text-text-muted">{row.condicion}</div>
                      </td>
                      <td className="table-body-cell text-center font-black text-lg md:text-xl text-text-primary">{row.cantidad}</td>
-                     <td className="table-body-cell text-right text-success font-bold">${safeNumber(row.precio).toFixed(2)}</td>
+                     <td className="table-body-cell text-right"><span className="money-value">${safeNumber(row.precio).toFixed(2)}</span></td>
                     <td className="table-body-cell text-center">
                       {/* New premium badge */}
                       <div className="flex items-center justify-center">
@@ -180,7 +180,7 @@ const VistaProductos = ({ usuario }) => {
                        <div className="text-[10px] text-text-muted truncate max-w-[200px]">{row.descripcion}</div>
                      </td>
                      <td className="table-body-cell text-center font-black text-text-primary">{row.cantidad}</td>
-                     <td className="table-body-cell text-right text-success font-bold">${safeNumber(row.precio).toFixed(2)}</td>
+                     <td className="table-body-cell text-right"><span className="money-value">${safeNumber(row.precio).toFixed(2)}</span></td>
                     <td className="table-body-cell">
                       <div className="flex justify-end items-center gap-2">
                         {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="px-3 py-2 text-[13px] font-black uppercase tracking-wide rounded-xl bg-black border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10 transition-all shadow-glow-sm">Editar</button>}
@@ -218,7 +218,7 @@ const VistaProductos = ({ usuario }) => {
                   </div>
                   <div className="flex flex-col text-right">
                     <span className="text-[9px] font-black text-text-muted uppercase tracking-widest">Precio</span>
-                     <span className="text-accent font-black text-xl">${safeNumber(row.precio).toFixed(2)}</span>
+                     <span className="money-value text-xl">${safeNumber(row.precio).toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-2">
@@ -244,7 +244,7 @@ const VistaProductos = ({ usuario }) => {
                   </div>
                   <div className="flex flex-col text-right">
                     <span className="text-[9px] font-black text-text-muted uppercase tracking-widest">Precio</span>
-                     <span className="text-accent font-black text-xl">${safeNumber(row.precio).toFixed(2)}</span>
+                     <span className="money-value text-xl">${safeNumber(row.precio).toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-2">
@@ -311,7 +311,7 @@ const VistaProductos = ({ usuario }) => {
                     <div className="relative">
                       <SelectPremium
                         options={condicionesLista.map(c => ({ value: c, label: c }))}
-                        value={formBat.condicion}
+                        value={formBat.condicion || 'Nueva'}
                         onChange={(e) => setFormBat({ ...formBat, condicion: e.target.value })}
                         placeholder="Seleccione una condición"
                         className="w-full"

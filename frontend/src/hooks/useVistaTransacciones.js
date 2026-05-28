@@ -3,6 +3,7 @@ import { ventasAPI, comprasAPI, chatarraAPI, API, extraerMensajeError } from '..
 import apiCliente from '../servicios/servicios.js';
 import { useOperacionMultiItem } from './useOperacionMultiItem.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
+import { esProductoBateria } from '../utilidades/esProductoBateria.js';
 
 export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
   const [tab, setTab] = useState(tabPredeterminado);
@@ -47,8 +48,8 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
       const res = await apiCliente.get(`${API}/api/inventario/productos-pos?t=${ts}`);
       const productosArray = Array.isArray(res.data) ? res.data : res.data?.data || [];
       if (import.meta?.env?.DEV) console.log('PRODUCTOS POS CARGADOS:', productosArray);
-      setBaterias(productosArray);
-      setVarios([]);
+      setBaterias(productosArray.filter((p) => esProductoBateria(p)));
+      setVarios(productosArray.filter((p) => !esProductoBateria(p)));
       setProductos(productosArray);
     } catch (err) {
       setBaterias([]);
@@ -179,7 +180,8 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
       } else {
         art.producto_id = Number(it.producto_id);
       }
-      if (it.codigoManual) art.codigo_manual = it.codigoManual;
+      const codigoManual = it.codigo_manual ?? it.codigoManual;
+      if (codigoManual) art.codigo_manual = codigoManual;
       if (it.customMarca && !esCustom) art.marca_custom = it.customMarca;
       if (it.customTipoCaja && !esCustom) art.tipo_caja_custom = it.customTipoCaja;
       return art;

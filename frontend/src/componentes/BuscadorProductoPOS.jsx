@@ -1,6 +1,7 @@
 ﻿import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { safeNumber } from '../utilidades/safeNumber.js';
+import { esProductoBateria } from '../utilidades/esProductoBateria.js';
 
 export default function BuscadorProductoPOS({
   productos = [],
@@ -16,25 +17,12 @@ export default function BuscadorProductoPOS({
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
-  const isBattery = (p) => {
-    if (!p) return false;
-    if (p.es_bateria === true) return true;
-    const cat = (p.categoria || p.tipo_producto || '').toString().toLowerCase();
-    if (cat.includes('bater')) return true;
-    const tipoCaja = (p.tipo_caja || '').toString().toLowerCase();
-    if (tipoCaja.includes('bater')) return true;
-    const nombre = (p.nombre || '').toString().toLowerCase();
-    if (nombre.includes('bater')) return true;
-    return false;
-  };
-
   const filtered = useMemo(() => {
     const q = searchText.trim().toLowerCase();
     // base list (apply mode filter first)
     let base = productos;
-    if (mode === 'varios') {
-      base = productos.filter(p => !isBattery(p));
-    }
+    if (mode === 'varios') base = productos.filter((p) => !esProductoBateria(p));
+    if (mode === 'bateria') base = productos.filter((p) => esProductoBateria(p));
     if (!q) return base.slice(0, 10);
     return base
       .filter(p => {
@@ -150,7 +138,7 @@ export default function BuscadorProductoPOS({
                   <span className="text-[11px] font-black uppercase tracking-wider text-accent">
                     [{producto.codigo}]
                   </span>
-                  <span className="text-xs font-bold text-success">
+                  <span className="money-value">
                     ${safeNumber(producto.precio_venta).toFixed(2)}
                   </span>
                 </div>
