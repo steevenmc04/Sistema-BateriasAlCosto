@@ -59,20 +59,20 @@ const VistaProductos = ({ usuario }) => {
   const puedeEditar = tienePermiso(usuario, 'inventario_editar');
   const puedeEliminar = tienePermiso(usuario, 'inventario_eliminar');
   const columnasBaterias = useMemo(() => ([
-    { key: 'referencia', label: 'Referencia', width: '120px' },
+    { key: 'referencia', label: 'Referencia', width: '100px' },
     { key: 'producto', label: 'Marca · Caja · Descripción' },
-    { key: 'cantidad', label: 'Cantidad', width: '110px', align: 'center' },
-    { key: 'precio', label: 'Precio USD', width: '130px', align: 'right' },
-    { key: 'estado', label: 'Estado stock', width: '150px', align: 'center' },
-    { key: 'acciones', label: 'Acciones', width: '130px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'cantidad', label: 'Cantidad', width: '90px', align: 'center' },
+    { key: 'precio', label: 'Precio USD', width: '120px', align: 'right' },
+    { key: 'estado', label: 'Estado stock', width: '140px', align: 'center' },
+    { key: 'acciones', label: 'Acciones', width: '110px', align: 'center', cellClassName: 'table-action-cell' },
   ]), []);
 
   const columnasVarios = useMemo(() => ([
-    { key: 'referencia', label: 'Referencia', width: '120px' },
+    { key: 'referencia', label: 'Referencia', width: '100px' },
     { key: 'nombre', label: 'Nombre' },
-    { key: 'cantidad', label: 'Cantidad', width: '110px', align: 'center' },
-    { key: 'precio', label: 'Precio', width: '130px', align: 'right' },
-    { key: 'acciones', label: 'Acciones', width: '130px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'cantidad', label: 'Cantidad', width: '90px', align: 'center' },
+    { key: 'precio', label: 'Precio', width: '120px', align: 'right' },
+    { key: 'acciones', label: 'Acciones', width: '110px', align: 'center', cellClassName: 'table-action-cell' },
   ]), []);
 
   if (!tienePermiso(usuario, 'inventario_ver')) {
@@ -142,12 +142,12 @@ const VistaProductos = ({ usuario }) => {
             loading={cargando}
             loadingMessage="Cargando inventario…"
             emptyMessage="No hay registros en inventario."
-            minWidthClass={tab === 'baterias' ? 'min-w-[860px]' : 'min-w-[780px]'}
+            minWidthClass={tab === 'baterias' ? 'min-w-[900px]' : 'min-w-[900px]'}
             renderCell={(row, column) => {
               if (tab === 'baterias') {
                 if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
                 if (column.key === 'producto') return (
-                  <div className="max-w-[380px]">
+                  <div className="max-w-[340px]">
                     <div className="cell-main">{row.marca}</div>
                     <div className="cell-sub uppercase tracking-widest">{row.tipo_caja}</div>
                     <div className="cell-sub">{row.condicion}</div>
@@ -167,8 +167,8 @@ const VistaProductos = ({ usuario }) => {
                 if (column.key === 'acciones') {
                   return (
                     <div className="action-cell">
-                      {puedeEditar && <button type="button" onClick={() => abrirEditarBateria(row)} className="action-btn">Editar</button>}
-                      {puedeEliminar && <button type="button" onClick={() => eliminarBateriaFn(row.id)} className="action-btn delete-btn !min-w-[40px] !px-0"><Trash2 size={16} /></button>}
+                      {puedeEditar && <button type="button" onClick={() => abrirEditarBateria(row)} className="action-btn action-btn-text">Editar</button>}
+                      {puedeEliminar && <button type="button" onClick={() => eliminarBateriaFn(row.id)} className="action-btn delete-btn !w-9 !h-9 !min-w-[36px]"><Trash2 size={16} /></button>}
                     </div>
                   );
                 }
@@ -177,7 +177,7 @@ const VistaProductos = ({ usuario }) => {
 
               if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
               if (column.key === 'nombre') return (
-                <div className="max-w-[380px]">
+                <div className="max-w-[340px]">
                   <div className="cell-main">{row.nombre}</div>
                   <div className="cell-sub">{row.descripcion}</div>
                 </div>
@@ -187,8 +187,8 @@ const VistaProductos = ({ usuario }) => {
               if (column.key === 'acciones') {
                 return (
                   <div className="action-cell">
-                    {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="action-btn">Editar</button>}
-                    {puedeEliminar && <button type="button" onClick={() => eliminarVarFn(row.id)} className="action-btn delete-btn !min-w-[40px] !px-0"><Trash2 size={16} /></button>}
+                    {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="action-btn action-btn-text">Editar</button>}
+                    {puedeEliminar && <button type="button" onClick={() => eliminarVarFn(row.id)} className="action-btn delete-btn !w-9 !h-9 !min-w-[36px]"><Trash2 size={16} /></button>}
                   </div>
                 );
               }

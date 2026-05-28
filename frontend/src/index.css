@@ -164,12 +164,10 @@
 
   .table-shell {
     width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
     border: 1px solid rgba(227,198,106,0.18);
     border-radius: 18px;
     background: #0A0A0A;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
   }
   .table-premium {
     width: 100%;
@@ -183,6 +181,13 @@
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
   }
+  .table-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: rgba(227,198,106,0.35);
+    border-radius: 999px;
+  }
   .table-scroll > table,
   table.table-premium,
   .table-premium > table,
@@ -192,10 +197,10 @@
     table-layout: fixed;
   }
   .table-premium th {
-    height: 50px;
-    padding: 0 14px;
+    height: 48px;
+    padding: 0 12px;
     font-size: 11px;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: #E3C66A;
     font-weight: 800;
@@ -203,10 +208,12 @@
     background: #101010;
     text-align: left;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     vertical-align: middle;
   }
   .table-premium tbody tr {
-    height: 62px;
+    height: 60px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     transition: background 0.2s ease;
   }
@@ -214,8 +221,8 @@
     background: rgba(255,255,255,0.02);
   }
   .table-premium td {
-    height: 62px;
-    padding: 10px 14px;
+    height: 60px;
+    padding: 10px 12px;
     vertical-align: middle;
     color: #F2EFE6;
     font-size: 14px;
@@ -366,21 +373,23 @@
   }
 
   .table-header-cell {
-    height: 50px;
-    padding: 0 14px;
+    height: 48px;
+    padding: 0 12px;
     font-size: 11px;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: #E3C66A;
     font-weight: 800;
     vertical-align: middle;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     text-align: left;
   }
   .table-body-cell,
   .table-cell {
-    height: 62px;
-    padding: 10px 14px;
+    height: 60px;
+    padding: 10px 12px;
     font-size: 14px;
     line-height: 1.25;
     vertical-align: middle;
@@ -482,7 +491,8 @@
 
   .money-cell {
     display: block;
-    font-size: 16px;
+    width: 100%;
+    font-size: 15px;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     font-weight: 900;
@@ -509,7 +519,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     white-space: nowrap;
   }
 
@@ -521,8 +531,8 @@
   .action-btn {
     height: 36px;
     min-width: 36px;
-    padding: 0 12px;
-    border-radius: 12px;
+    padding: 0;
+    border-radius: 10px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -530,11 +540,17 @@
     border: 1px solid rgba(227,198,106,0.25);
     background: rgba(255,255,255,0.02);
     color: #F2EFE6;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     transition: all .2s ease;
+  }
+  .action-btn-text {
+    min-width: 70px;
+    height: 34px;
+    padding: 0 10px;
+    font-size: 12px;
   }
 
   .action-btn:hover {
@@ -554,24 +570,46 @@
   .pagination-premium {
     width: 100%;
     display: grid;
-    grid-template-columns: 220px 1fr 220px;
+    grid-template-columns: minmax(180px, 240px) 1fr minmax(180px, 240px);
     align-items: center;
     gap: 16px;
     padding: 14px 18px;
-    border-top: 1px solid rgba(227,198,106,0.15);
+    border-top: 1px solid rgba(227,198,106,0.16);
+    background: #0A0A0A;
   }
 
-  .pagination-group {
+  .pagination-left {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    min-width: 0;
+  }
+  .pagination-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #F2EFE6;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pagination-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     gap: 12px;
-    min-height: 40px;
+    min-width: 0;
   }
 
   .pagination-select {
-    width: 88px;
-    min-width: 88px;
-    height: 40px;
+    width: 120px;
+    min-width: 120px;
+    height: 44px;
   }
 
   /* Accent utilities */
@@ -651,13 +689,15 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 @media (max-width: 768px) {
   .pagination-premium {
     grid-template-columns: 1fr;
+    justify-items: center;
     text-align: center;
   }
-  .pagination-group {
+  .pagination-left,
+  .pagination-center,
+  .pagination-right {
     justify-content: center;
+    width: 100%;
   }
 }
 
 /* End of component styles */
-
-

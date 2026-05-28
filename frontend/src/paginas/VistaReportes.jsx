@@ -1,10 +1,12 @@
 ﻿import React from 'react';
 import { FileText, Download, RefreshCw } from 'lucide-react';
 import { useVistaReportes } from '../hooks/useVistaReportes.js';
+import { usePaginacion } from '../hooks/usePaginacion.js';
 import Button from '../componentes/Button.jsx';
 import Badge from '../componentes/Badge.jsx';
 import SelectPremium from '../componentes/SelectPremium.jsx';
 import TablePremium from '../componentes/TablePremium.jsx';
+import Paginacion from '../componentes/Paginacion.jsx';
 import { tienePermiso } from '../utilidades/permisosCliente.js';
 import { safeNumber } from '../utilidades/safeNumber.js';
 import PageTitle from '../componentes/PageTitle.jsx';
@@ -22,36 +24,41 @@ const obtenerCodigoManual = (r) => {
 
 const VistaReportes = ({ usuario }) => {
   const vp = useVistaReportes();
+  const {
+    paginaActual, setPaginaActual,
+    elementosPorPagina, setElementosPorPagina,
+    totalPaginas, itemsPaginados, totalElementos
+  } = usePaginacion(vp.registros, 10);
   const puedeVer = tienePermiso(usuario, 'reportes_ver');
   const puedePdf = tienePermiso(usuario, 'reportes_pdf');
   const columnasVentas = [
-    { key: 'fecha', label: 'Fecha', width: '115px' },
-    { key: 'tipo', label: 'Tipo', width: '100px' },
-    { key: 'codigo', label: 'Código', width: '120px' },
-    { key: 'cliente', label: 'Cliente', width: '190px' },
-    { key: 'vendedor', label: 'Vendido por', width: '160px' },
-    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
-    { key: 'pvp', label: 'PVP Unit.', width: '120px', align: 'right' },
-    { key: 'costo', label: 'Costo', width: '120px', align: 'right' },
+    { key: 'fecha', label: 'Fecha', width: '110px' },
+    { key: 'tipo', label: 'Tipo', width: '90px' },
+    { key: 'codigo', label: 'Código', width: '110px' },
+    { key: 'cliente', label: 'Cliente', width: '180px' },
+    { key: 'vendedor', label: 'Vendido por', width: '150px' },
+    { key: 'cantidad', label: 'Cant.', width: '70px', align: 'center' },
+    { key: 'pvp', label: 'PVP Unit.', width: '110px', align: 'right' },
+    { key: 'costo', label: 'Costo', width: '110px', align: 'right' },
     { key: 'iva', label: 'IVA?', width: '90px', align: 'center' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
   ];
   const columnasCompras = [
-    { key: 'fecha', label: 'Fecha', width: '115px' },
-    { key: 'marca', label: 'Marca', width: '190px' },
+    { key: 'fecha', label: 'Fecha', width: '110px' },
+    { key: 'marca', label: 'Marca', width: '180px' },
     { key: 'caja', label: 'Caja', width: '160px' },
-    { key: 'cond', label: 'Cond.', width: '100px' },
-    { key: 'cantidad', label: 'Cantidad', width: '80px', align: 'center' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'cond', label: 'Cond.', width: '90px' },
+    { key: 'cantidad', label: 'Cantidad', width: '70px', align: 'center' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
     { key: 'proveedor', label: 'Proveedor' },
   ];
   const columnasChatarra = [
-    { key: 'fecha', label: 'Fecha', width: '115px' },
-    { key: 'tipo', label: 'Operación', width: '100px' },
+    { key: 'fecha', label: 'Fecha', width: '110px' },
+    { key: 'tipo', label: 'Operación', width: '90px' },
     { key: 'caja', label: 'Caja', width: '160px' },
-    { key: 'cantidad', label: 'Cantidad', width: '80px', align: 'center' },
-    { key: 'pu', label: 'PU', width: '120px', align: 'right' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'cantidad', label: 'Cantidad', width: '70px', align: 'center' },
+    { key: 'pu', label: 'PU', width: '110px', align: 'right' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
     { key: 'contraparte', label: 'Contraparte' },
   ];
   const columnasInventario = [
@@ -124,6 +131,7 @@ const VistaReportes = ({ usuario }) => {
   };
 
   React.useEffect(() => { if (puedeVer) vp.refrescarVista(); }, [puedeVer, vp.tipo, vp.desde, vp.hasta]);
+  React.useEffect(() => { setPaginaActual(1); }, [vp.tipo, vp.desde, vp.hasta, setPaginaActual]);
 
   if (!puedeVer) return <div className="p-16 text-center font-black uppercase tracking-[0.3em] text-error text-xs">No tienes permisos para acceder a esta sección.</div>;
 
@@ -247,21 +255,31 @@ const VistaReportes = ({ usuario }) => {
                     ? columnasChatarra
                     : columnasInventario
             }
-            data={vp.registros}
+            data={itemsPaginados}
             rowKey={(row, idx) => row.id || `${vp.tipo}-${idx}`}
             loading={vp.cargando}
             loadingMessage="Consultando base de datos…"
             emptyMessage="No hay datos para el rango seleccionado."
             minWidthClass={
               vp.tipo.startsWith('ventas')
-                ? 'min-w-[1225px]'
+                ? 'min-w-[1120px]'
                 : vp.tipo === 'compras'
-                  ? 'min-w-[970px]'
+                  ? 'min-w-[1120px]'
                   : vp.tipo === 'chatarra'
-                    ? 'min-w-[905px]'
-                    : 'min-w-[1150px]'
+                    ? 'min-w-[1120px]'
+                    : 'min-w-[1120px]'
             }
             renderCell={renderDesktopCell}
+            footer={
+              <Paginacion
+                paginaActual={paginaActual}
+                totalPaginas={totalPaginas}
+                totalElementos={totalElementos}
+                elementosPorPagina={elementosPorPagina}
+                setPaginaActual={setPaginaActual}
+                setElementosPorPagina={setElementosPorPagina}
+              />
+            }
           />
         </div>
 
@@ -270,7 +288,7 @@ const VistaReportes = ({ usuario }) => {
           {vp.cargando ? (
             <div className="py-12 text-center text-[10px] font-black uppercase text-text-muted tracking-widest">Consultando...</div>
           ) : (
-            vp.registros.map((r, idx) => (
+            itemsPaginados.map((r, idx) => (
               <div key={idx} className="item-card">
                 <div className="flex justify-between items-start">
                   <div>
@@ -293,6 +311,18 @@ const VistaReportes = ({ usuario }) => {
             ))
           )}
         </div>
+        {!vp.cargando && (
+          <div className="md:hidden p-4 pt-0">
+            <Paginacion
+              paginaActual={paginaActual}
+              totalPaginas={totalPaginas}
+              totalElementos={totalElementos}
+              elementosPorPagina={elementosPorPagina}
+              setPaginaActual={setPaginaActual}
+              setElementosPorPagina={setElementosPorPagina}
+            />
+          </div>
+        )}
         <div className="px-6 py-3 text-text-muted text-[10px] font-black uppercase tracking-[0.2em]">
           Rango solicitado
         </div>

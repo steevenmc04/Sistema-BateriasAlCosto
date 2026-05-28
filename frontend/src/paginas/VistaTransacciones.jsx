@@ -129,32 +129,32 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
   ) : null;
 
   const columnasVenta = [
-    { key: 'fecha', label: 'Fecha', width: '120px' },
-    { key: 'producto', label: 'Producto', width: '220px' },
-    { key: 'cliente', label: 'Cliente', width: '220px' },
-    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
-    { key: 'items', label: 'Items', width: '80px', align: 'center' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
-    { key: 'vendedor', label: 'Vendedor', width: '160px' },
-    { key: 'acciones', label: 'Acciones', width: '90px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'fecha', label: 'Fecha', width: '110px' },
+    { key: 'producto', label: 'Producto', width: '210px' },
+    { key: 'cliente', label: 'Cliente', width: '210px' },
+    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
+    { key: 'items', label: 'Items', width: '70px', align: 'center' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
+    { key: 'vendedor', label: 'Vendedor', width: '150px' },
+    { key: 'acciones', label: 'Acciones', width: '80px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const columnasCompra = [
-    { key: 'fecha', label: 'Fecha', width: '120px' },
-    { key: 'producto', label: 'Producto', width: '220px' },
-    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
-    { key: 'items', label: 'Items', width: '80px', align: 'center' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
-    { key: 'usuario', label: 'Usuario', width: '160px' },
-    { key: 'acciones', label: 'Acciones', width: '90px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'fecha', label: 'Fecha', width: '110px' },
+    { key: 'producto', label: 'Producto', width: '210px' },
+    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
+    { key: 'items', label: 'Items', width: '70px', align: 'center' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
+    { key: 'usuario', label: 'Usuario', width: '150px' },
+    { key: 'acciones', label: 'Acciones', width: '80px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const columnasChatarra = [
-    { key: 'fecha', label: 'Fecha', width: '120px' },
-    { key: 'tipo', label: 'Tipo', width: '100px', align: 'center' },
-    { key: 'producto', label: 'Producto', width: '220px' },
-    { key: 'cantidad', label: 'Cant.', width: '90px', align: 'center' },
-    { key: 'items', label: 'Items', width: '80px', align: 'center' },
-    { key: 'total', label: 'Total', width: '130px', align: 'right' },
-    { key: 'usuario', label: 'Usuario', width: '160px' },
+    { key: 'fecha', label: 'Fecha', width: '110px' },
+    { key: 'tipo', label: 'Tipo', width: '90px', align: 'center' },
+    { key: 'producto', label: 'Producto', width: '210px' },
+    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
+    { key: 'items', label: 'Items', width: '70px', align: 'center' },
+    { key: 'total', label: 'Total', width: '120px', align: 'right' },
+    { key: 'usuario', label: 'Usuario', width: '150px' },
   ];
 
   const renderDesktopCell = (item, column) => {
@@ -177,7 +177,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 con_iva: Number(item.monto_iva) > 0, descuento_global: 0,
                 notas: `Venta registrada el ${formatearFecha(item.creado_en)}`,
                 items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, item.producto_codigo].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total) / Number(item.cantidad_total) : 0), descuento: 0 }],
-              } } })} className="action-btn !w-10 !min-w-[40px] !px-0" title="Emitir factura"><FileText size={16} /></button>
+              } } })} className="action-btn !w-9 !h-9 !min-w-[36px]" title="Emitir factura"><FileText size={16} /></button>
             )}
           </div>
         );
@@ -195,7 +195,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
       if (column.key === 'acciones') {
         return (
           <div className="action-cell">
-            <button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="action-btn !w-10 !min-w-[40px] !px-0" title="Copiar factura"><FileText size={16} /></button>
+            <button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="action-btn !w-9 !h-9 !min-w-[36px]" title="Copiar factura"><FileText size={16} /></button>
           </div>
         );
       }
@@ -318,7 +318,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
             loading={h.cargando}
             loadingMessage="Cargando historial..."
             emptyMessage="No hay transacciones registradas"
-            minWidthClass={h.tab === 'venta' ? 'min-w-[1110px]' : h.tab === 'compra' ? 'min-w-[900px]' : 'min-w-[900px]'}
+            minWidthClass="min-w-[980px]"
             renderCell={renderDesktopCell}
             footer={
               <Paginacion

@@ -11,11 +11,14 @@ export default function SelectPremium({
   className = '',
   disabled = false,
   clearable = false,
+  size = 'md',
+  openDirection = 'auto',
   id,
   name,
   ...props
 }) {
   const [open, setOpen] = useState(false)
+  const [openUp, setOpenUp] = useState(false)
   const [query, setQuery] = useState('')
   const [filtered, setFiltered] = useState([])
   const [highlighted, setHighlighted] = useState(-1)
@@ -76,6 +79,23 @@ export default function SelectPremium({
   }, [open])
 
   useEffect(() => {
+    if (!open || !ref.current) return
+    if (openDirection === 'up') {
+      setOpenUp(true)
+      return
+    }
+    if (openDirection === 'down') {
+      setOpenUp(false)
+      return
+    }
+    const rect = ref.current.getBoundingClientRect()
+    const estimatedDropdownHeight = Math.min(320, Math.max(120, (filtered.length || 1) * 44))
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+    setOpenUp(spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow)
+  }, [open, filtered.length, openDirection])
+
+  useEffect(() => {
     if (!open) return
     const onEsc = (e) => {
       if (e.key !== 'Escape') return
@@ -100,6 +120,7 @@ export default function SelectPremium({
       }
       return
     }
+
     switch (e.key) {
       case 'ArrowDown':
         setHighlighted((p) => Math.min(p + 1, filtered.length - 1))
@@ -123,6 +144,8 @@ export default function SelectPremium({
         setOpen(false)
         e.preventDefault()
         break
+      default:
+        break
     }
   }, [open, filtered, highlighted, onChange, onSelect])
 
@@ -134,6 +157,7 @@ export default function SelectPremium({
   }
 
   const inputValue = open ? query : displayLabel
+  const isSmall = size === 'sm'
 
   return (
     <div className={`space-y-2 overflow-visible ${className}`} ref={ref} id={id}>
@@ -143,7 +167,7 @@ export default function SelectPremium({
           role="combobox"
           aria-expanded={open}
           onKeyDown={handleKeyDown}
-          className={`relative w-full min-w-[180px] h-12 bg-zinc-950 border border-border-default rounded-xl px-4 text-text-primary cursor-text transition-all duration-200 flex items-center ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${open ? 'border-yellow-400 ring-2 ring-yellow-500/20' : ''} focus-within:border-yellow-400 focus-within:ring-2 focus-within:ring-yellow-500/20`}
+          className={`relative w-full ${isSmall ? 'min-w-0 h-11' : 'min-w-[180px] h-12'} bg-zinc-950 border border-border-default rounded-xl px-4 text-text-primary cursor-text transition-all duration-200 flex items-center ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${open ? 'border-yellow-400 ring-2 ring-yellow-500/20' : ''} focus-within:border-yellow-400 focus-within:ring-2 focus-within:ring-yellow-500/20`}
           onClick={() => {
             if (disabled) return
             setOpen(true)
@@ -153,10 +177,13 @@ export default function SelectPremium({
         >
           <input
             aria-label={label || placeholder}
-            className="select-premium-input w-full h-full min-w-0 bg-transparent border-0 outline-none ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none px-0 pr-10 text-text-primary text-sm leading-tight placeholder:text-text-muted"
+            className={`select-premium-input w-full h-full min-w-0 bg-transparent border-0 outline-none ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none px-0 pr-10 text-text-primary ${isSmall ? 'text-[13px]' : 'text-sm'} leading-tight placeholder:text-text-muted`}
             placeholder={open ? (placeholder || 'Buscar') : ''}
             value={inputValue}
-            onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setOpen(true)
+            }}
             onFocus={() => setOpen(true)}
             onBlur={() => setTimeout(() => {}, 120)}
             autoComplete="off"
@@ -165,7 +192,7 @@ export default function SelectPremium({
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {clearable && value && (
               <button type="button" onClick={() => onChange({ target: { value: '' } })} className="text-text-muted hover:text-white p-0 m-0 bg-transparent border-0">
-                ✕
+                x
               </button>
             )}
             <ChevronDown size={16} className={`text-text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
@@ -173,7 +200,10 @@ export default function SelectPremium({
         </div>
 
         {open && (
-          <div ref={listRef} className="absolute left-0 right-0 top-full mt-2 z-50 w-full min-w-full rounded-xl border border-border-default bg-zinc-950 shadow-xl max-h-72 overflow-y-auto overflow-x-hidden custom-scrollbar">
+          <div
+            ref={listRef}
+            className={`absolute left-0 right-0 z-50 w-full min-w-full rounded-xl border border-border-default bg-zinc-950 shadow-xl max-h-72 overflow-y-auto overflow-x-hidden custom-scrollbar ${openUp ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+          >
             {filtered.length === 0 ? (
               <div className="px-4 py-3 text-sm text-text-muted">Sin opciones</div>
             ) : (
