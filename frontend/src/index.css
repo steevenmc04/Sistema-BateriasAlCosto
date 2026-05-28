@@ -171,7 +171,6 @@
   }
   .table-premium {
     width: 100%;
-    min-width: max-content;
     table-layout: fixed;
     border-collapse: collapse;
   }
@@ -197,8 +196,8 @@
     table-layout: fixed;
   }
   .table-premium th {
-    height: 48px;
-    padding: 0 12px;
+    height: 50px;
+    padding: 0 14px;
     font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -208,12 +207,12 @@
     background: #101010;
     text-align: left;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: unset;
     vertical-align: middle;
   }
   .table-premium tbody tr {
-    height: 60px;
+    height: 62px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     transition: background 0.2s ease;
   }
@@ -221,8 +220,8 @@
     background: rgba(255,255,255,0.02);
   }
   .table-premium td {
-    height: 60px;
-    padding: 10px 12px;
+    height: 62px;
+    padding: 10px 14px;
     vertical-align: middle;
     color: #F2EFE6;
     font-size: 14px;
@@ -373,8 +372,8 @@
   }
 
   .table-header-cell {
-    height: 48px;
-    padding: 0 12px;
+    height: 50px;
+    padding: 0 14px;
     font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -382,14 +381,14 @@
     font-weight: 800;
     vertical-align: middle;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: unset;
     text-align: left;
   }
   .table-body-cell,
   .table-cell {
-    height: 60px;
-    padding: 10px 12px;
+    height: 62px;
+    padding: 10px 14px;
     font-size: 14px;
     line-height: 1.25;
     vertical-align: middle;
@@ -519,7 +518,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     white-space: nowrap;
   }
 
@@ -531,7 +530,7 @@
   .action-btn {
     height: 36px;
     min-width: 36px;
-    padding: 0;
+    padding: 0 12px;
     border-radius: 10px;
     display: inline-flex;
     align-items: center;
@@ -545,6 +544,12 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     transition: all .2s ease;
+  }
+  .action-btn-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
   }
   .action-btn-text {
     min-width: 70px;
@@ -570,11 +575,11 @@
   .pagination-premium {
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(180px, 240px) 1fr minmax(180px, 240px);
+    grid-template-columns: 220px 1fr 220px;
     align-items: center;
     gap: 16px;
     padding: 14px 18px;
-    border-top: 1px solid rgba(227,198,106,0.16);
+    border-top: 1px solid rgba(227,198,106,0.15);
     background: #0A0A0A;
   }
 
@@ -583,7 +588,6 @@
     align-items: center;
     justify-content: flex-start;
     gap: 10px;
-    min-width: 0;
   }
   .pagination-center {
     display: flex;
@@ -593,17 +597,13 @@
     color: #F2EFE6;
     font-size: 12px;
     font-weight: 700;
-    min-width: 0;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   .pagination-right {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 12px;
-    min-width: 0;
   }
 
   .pagination-select {

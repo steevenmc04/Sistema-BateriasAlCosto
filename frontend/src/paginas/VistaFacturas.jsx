@@ -57,12 +57,12 @@ const VistaFacturas = ({ usuario }) => {
 
   const [formConfig, setFormConfig] = useState({});
   const columnasFacturas = [
-    { key: 'numero', label: 'N° Factura', width: '120px' },
-    { key: 'fecha', label: 'Fecha', width: '100px' },
+    { key: 'numero', label: 'N° Factura', width: '130px' },
+    { key: 'fecha', label: 'Fecha', width: '110px' },
     { key: 'cliente', label: 'Cliente' },
-    { key: 'total', label: 'Total', width: '120px', align: 'right' },
-    { key: 'estado', label: 'Estado', width: '120px', align: 'center' },
-    { key: 'acciones', label: 'Acciones', width: '110px', align: 'center', cellClassName: 'table-action-cell' },
+    { key: 'total', label: 'Total', width: '130px', align: 'right' },
+    { key: 'estado', label: 'Estado', width: '130px', align: 'center' },
+    { key: 'acciones', label: 'Acciones', width: '130px', align: 'center', cellClassName: 'table-action-cell' },
   ];
   const abrirConfigEmpresa = () => {
     setFormConfig(configEmpresa || { razon_social: '', ruc: '', direccion: '', telefono: '', email: '', ciudad: 'Guayaquil', pais: 'Ecuador', prefijo_factura: 'FAC', iva_porcentaje: 15 });
@@ -160,9 +160,9 @@ const VistaFacturas = ({ usuario }) => {
             if (column.key === 'acciones') {
               return (
                 <div className="action-cell">
-                  <button onClick={() => descargarPDF(f.id)} className="action-btn !w-9 !h-9 !min-w-[36px]" title="Descargar PDF"><Download size={16} /></button>
+                  <button onClick={() => descargarPDF(f.id)} className="action-btn action-btn-icon" title="Descargar PDF"><Download size={16} /></button>
                   {f.estado === 'emitida' && puedeAnular && (
-                    <button onClick={() => anularFactura(f.id)} className="action-btn delete-btn !w-9 !h-9 !min-w-[36px]" title="Anular"><Trash2 size={16} /></button>
+                    <button onClick={() => anularFactura(f.id)} className="action-btn action-btn-icon delete-btn" title="Anular"><Trash2 size={16} /></button>
                   )}
                   {f.sri_ride_url && (
                     <a href={f.sri_ride_url} target="_blank" rel="noreferrer" className="action-btn !h-8 !px-2 !text-[10px]">RIDE</a>

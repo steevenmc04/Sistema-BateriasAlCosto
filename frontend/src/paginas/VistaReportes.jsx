@@ -35,11 +35,9 @@ const VistaReportes = ({ usuario }) => {
     { key: 'fecha', label: 'Fecha', width: '110px' },
     { key: 'tipo', label: 'Tipo', width: '90px' },
     { key: 'codigo', label: 'Código', width: '110px' },
-    { key: 'cliente', label: 'Cliente', width: '180px' },
-    { key: 'vendedor', label: 'Vendido por', width: '150px' },
-    { key: 'cantidad', label: 'Cant.', width: '70px', align: 'center' },
-    { key: 'pvp', label: 'PVP Unit.', width: '110px', align: 'right' },
-    { key: 'costo', label: 'Costo', width: '110px', align: 'right' },
+    { key: 'cliente', label: 'Cliente', width: '220px' },
+    { key: 'vendedor', label: 'Vendido por', width: '170px' },
+    { key: 'cantidad', label: 'Cant.', width: '80px', align: 'center' },
     { key: 'iva', label: 'IVA?', width: '90px', align: 'center' },
     { key: 'total', label: 'Total', width: '120px', align: 'right' },
   ];
@@ -81,8 +79,6 @@ const VistaReportes = ({ usuario }) => {
       if (column.key === 'cliente') return <span className="cell-main truncate block">{r.nombre_cliente}</span>;
       if (column.key === 'vendedor') return <span className="cell-main truncate block">{r.usuario_nombre || '-'}</span>;
       if (column.key === 'cantidad') return <span className="cell-main">{r.cantidad}</span>;
-      if (column.key === 'pvp') return <span className="money-cell">${safeNumber(r.precio_unitario).toFixed(2)}</span>;
-      if (column.key === 'costo') return <span className="money-cell">${safeNumber(r.costo_unitario || 0).toFixed(2)}</span>;
       if (column.key === 'iva') return <span className="cell-main">{safeNumber(r.con_iva) === 1 ? 'Con IVA' : 'Sin IVA'}</span>;
       if (column.key === 'total') return <span className="money-cell">${safeNumber(r.total).toFixed(2)}</span>;
       return null;
@@ -262,11 +258,11 @@ const VistaReportes = ({ usuario }) => {
             emptyMessage="No hay datos para el rango seleccionado."
             minWidthClass={
               vp.tipo.startsWith('ventas')
-                ? 'min-w-[1120px]'
+                ? 'min-w-[1000px]'
                 : vp.tipo === 'compras'
-                  ? 'min-w-[1120px]'
+                  ? 'min-w-[960px]'
                   : vp.tipo === 'chatarra'
-                    ? 'min-w-[1120px]'
+                    ? 'min-w-[920px]'
                     : 'min-w-[1120px]'
             }
             renderCell={renderDesktopCell}
