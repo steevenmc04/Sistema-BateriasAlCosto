@@ -179,6 +179,7 @@
     background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
     position: sticky; top: 0; z-index: 20;
     border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
   }
   .table-premium tbody tr {
     @apply transition-colors duration-150;
@@ -192,7 +193,7 @@
     @apply border-b-0;
   }
   .table-premium tbody td {
-    @apply px-4 md:px-6 py-3;
+    @apply px-4 md:px-6 py-3 align-middle;
   }
 
   .search-input {
