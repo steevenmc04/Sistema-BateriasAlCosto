@@ -38,9 +38,9 @@ export default function ComponenteTablaItems({ items, onActualizarCampo, onElimi
         )}
       </div>
 
-      <div className="table-premium">
+      <div className="table-shell">
         <div className="table-scroll hide-scrollbar">
-        <table className="w-full text-left border-collapse min-w-[860px] table-fixed">
+        <table className="table-premium min-w-[860px] text-left">
           <thead>
             <tr>
               <th className="table-header-cell product-col">Producto</th>

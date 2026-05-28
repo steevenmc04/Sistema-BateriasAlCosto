@@ -18,7 +18,7 @@ const Paginacion = ({
 
   return (
     <div className="pagination-premium bg-black/40 text-xs text-text-primary">
-      <div className="pagination-group justify-center lg:justify-start">
+      <div className="pagination-group justify-start">
         <span className="text-[10px] font-black uppercase tracking-widest">Mostrar</span>
         <div className="pagination-select">
           <SelectPremium
@@ -32,11 +32,11 @@ const Paginacion = ({
         <span className="text-[10px] font-black uppercase tracking-widest">registros</span>
       </div>
 
-      <div className="flex-1 min-w-[240px] text-center font-medium text-text-primary text-[10px]">
+      <div className="text-center font-medium text-text-primary text-[10px]">
         Mostrando {inicio} a {fin} de {totalElementos} registros
       </div>
 
-      <div className="pagination-group justify-center lg:justify-end">
+      <div className="pagination-group justify-end">
         <button
           onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
           disabled={paginaActual === 1}

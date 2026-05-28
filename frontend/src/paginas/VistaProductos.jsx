@@ -8,6 +8,7 @@ import Button from '../componentes/Button.jsx';
 import { safeNumber } from '../utilidades/safeNumber.js';
 import Autocomplete from '../componentes/Autocomplete.jsx';
 import SelectPremium from '../componentes/SelectPremium.jsx';
+import TablePremium from '../componentes/TablePremium.jsx';
 import { tienePermiso } from '../utilidades/permisosCliente.js';
 import PageTitle from '../componentes/PageTitle.jsx';
 
@@ -57,6 +58,22 @@ const VistaProductos = ({ usuario }) => {
   const puedeCrear = tienePermiso(usuario, 'inventario_crear');
   const puedeEditar = tienePermiso(usuario, 'inventario_editar');
   const puedeEliminar = tienePermiso(usuario, 'inventario_eliminar');
+  const columnasBaterias = useMemo(() => ([
+    { key: 'referencia', label: 'Referencia', widthClassName: 'w-[130px]' },
+    { key: 'producto', label: 'Marca · Caja · Descripción' },
+    { key: 'cantidad', label: 'Cantidad', widthClassName: 'w-[120px]', align: 'center' },
+    { key: 'precio', label: 'Precio USD', widthClassName: 'w-[150px]', align: 'right' },
+    { key: 'estado', label: 'Estado stock', widthClassName: 'w-[170px]', align: 'center' },
+    { key: 'acciones', label: 'Acciones', widthClassName: 'w-[140px]', align: 'center' },
+  ]), []);
+
+  const columnasVarios = useMemo(() => ([
+    { key: 'referencia', label: 'Referencia', widthClassName: 'w-[130px]' },
+    { key: 'nombre', label: 'Nombre' },
+    { key: 'cantidad', label: 'Cantidad', widthClassName: 'w-[120px]', align: 'center' },
+    { key: 'precio', label: 'Precio', widthClassName: 'w-[150px]', align: 'right' },
+    { key: 'acciones', label: 'Acciones', widthClassName: 'w-[140px]', align: 'center' },
+  ]), []);
 
   if (!tienePermiso(usuario, 'inventario_ver')) {
     return (
@@ -115,85 +132,79 @@ const VistaProductos = ({ usuario }) => {
         <div className="text-error text-xs font-black uppercase tracking-wider border border-red-500/30 bg-red-500/10 px-6 py-3 rounded-xl">{errorMsg}</div>
       )}
 
-      <div className="table-premium">
+      <div className="space-y-0">
         {/* DESKTOP TABLE */}
-         <div className="hidden md:block table-scroll">
-          <table className="w-full text-left table-fixed min-w-[980px]">
-            <thead>
-               <tr className="table-header-cell">
-                {tab === 'baterias' ? (
+        <div className="hidden md:block">
+          <TablePremium
+            columns={tab === 'baterias' ? columnasBaterias : columnasVarios}
+            data={itemsPaginados}
+            rowKey={(row) => row.id}
+            loading={cargando}
+            loadingMessage="Cargando inventario…"
+            emptyMessage="No hay registros en inventario."
+            minWidthClass={tab === 'baterias' ? 'min-w-[1040px]' : 'min-w-[940px]'}
+            renderCell={(row, column) => {
+              if (tab === 'baterias') {
+                if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
+                if (column.key === 'producto') return (
                   <>
-                    <th className="table-header-cell reference-col">Referencia</th>
-                    <th className="table-header-cell product-col">Marca · Caja · Descripción</th>
-                    <th className="table-header-cell quantity-col">Cantidad</th>
-                    <th className="table-header-cell money-header money-col">Precio USD</th>
-                    <th className="table-header-cell status-col">Estado stock</th>
-                    <th className="table-header-cell actions-col">Acciones</th>
+                    <div className="cell-main">{row.marca}</div>
+                    <div className="cell-sub uppercase tracking-widest">{row.tipo_caja}</div>
+                    <div className="cell-sub">{row.condicion}</div>
                   </>
-                 ) : (
-                   <>
-                     <th className="table-header-cell reference-col">Referencia</th>
-                     <th className="table-header-cell product-col">Nombre</th>
-                     <th className="table-header-cell quantity-col">Cantidad</th>
-                     <th className="table-header-cell money-header money-col">Precio</th>
-                     <th className="table-header-cell actions-col">Acciones</th>
-                   </>
-                 )}
-              </tr>
-            </thead>
-             <tbody>
-               {cargando ? (
-                 <tr><td colSpan={6} className="table-cell text-center text-text-muted text-xs uppercase font-black tracking-widest">Cargando inventario…</td></tr>
-               ) : tab === 'baterias' ? (
-                itemsPaginados.map((row) => (
-                   <tr key={row.id} className="transition-colors text-sm hover:bg-zinc-900/80">
-                     <td className="table-cell font-black text-accent">{row.codigo}</td>
-                     <td className="table-cell text-text-primary">
-                       <div className="font-bold">{row.marca}</div>
-                       <div className="table-subtext uppercase tracking-widest">{row.tipo_caja}</div>
-                       <div className="table-subtext">{row.condicion}</div>
-                     </td>
-                     <td className="table-cell text-center font-black text-text-primary">{row.cantidad}</td>
-                     <td className="table-cell"><span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span></td>
-                    <td className="table-cell text-center">
-                      {/* New premium badge */}
-                      <div className="flex items-center justify-center">
-                        <Badge cantidad={row.cantidad} size="md">
-                          {row.estado_stock === 'sin_stock' ? 'Sin stock' : row.cantidad <= 5 ? 'Stock bajo' : 'Con stock'}
-                        </Badge>
-                      </div>
-                    </td>
-                    <td className="table-cell">
-                      <div className="action-cell">
-                         {puedeEditar && <button type="button" onClick={() => abrirEditarBateria(row)} className="px-3 py-2 text-[13px] font-black uppercase tracking-wide rounded-xl bg-black border border-border-default text-accent hover:bg-yellow-500/10 transition-all">Editar</button>}
-                         {puedeEliminar && <button type="button" onClick={() => eliminarBateriaFn(row.id)} className="p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 transition-all"><Trash2 size={18} /></button>}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                itemsPaginados.map((row) => (
-                    <tr key={row.id} className="transition-colors text-sm hover:bg-zinc-900/80">
-                     <td className="table-cell font-mono font-black text-accent">{row.codigo}</td>
-                     <td className="table-cell text-text-primary">
-                       <div className="font-bold">{row.nombre}</div>
-                       <div className="table-subtext truncate max-w-[220px]">{row.descripcion}</div>
-                     </td>
-                     <td className="table-cell text-center font-black text-text-primary">{row.cantidad}</td>
-                     <td className="table-cell"><span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span></td>
-                    <td className="table-cell">
-                      <div className="action-cell">
-                        {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="px-3 py-2 text-[13px] font-black uppercase tracking-wide rounded-xl bg-black border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10 transition-all shadow-glow-sm">Editar</button>}
-                        {puedeEliminar && <button type="button" onClick={() => eliminarVarFn(row.id)} className="p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all shadow-glow-danger"><Trash2 size={18} /></button>}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-           <Paginacion paginaActual={paginaActual} totalPaginas={totalPaginas} totalElementos={totalElementos}
-             elementosPorPagina={elementosPorPagina} setPaginaActual={setPaginaActual} setElementosPorPagina={setElementosPorPagina} />
+                );
+                if (column.key === 'cantidad') return <span className="cell-main">{row.cantidad}</span>;
+                if (column.key === 'precio') return <span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span>;
+                if (column.key === 'estado') {
+                  return (
+                    <div className="action-cell">
+                      <Badge cantidad={row.cantidad} size="md">
+                        {row.estado_stock === 'sin_stock' ? 'Sin stock' : row.cantidad <= 5 ? 'Stock bajo' : 'Con stock'}
+                      </Badge>
+                    </div>
+                  );
+                }
+                if (column.key === 'acciones') {
+                  return (
+                    <div className="action-cell">
+                      {puedeEditar && <button type="button" onClick={() => abrirEditarBateria(row)} className="h-10 px-3 text-[12px] font-black uppercase tracking-wide rounded-xl bg-black border border-border-default text-accent hover:bg-yellow-500/10 transition-all">Editar</button>}
+                      {puedeEliminar && <button type="button" onClick={() => eliminarBateriaFn(row.id)} className="h-10 w-10 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 transition-all flex items-center justify-center"><Trash2 size={16} /></button>}
+                    </div>
+                  );
+                }
+                return null;
+              }
+
+              if (column.key === 'referencia') return <span className="cell-main text-accent">{row.codigo}</span>;
+              if (column.key === 'nombre') return (
+                <>
+                  <div className="cell-main">{row.nombre}</div>
+                  <div className="cell-sub truncate">{row.descripcion}</div>
+                </>
+              );
+              if (column.key === 'cantidad') return <span className="cell-main">{row.cantidad}</span>;
+              if (column.key === 'precio') return <span className="money-cell">${safeNumber(row.precio).toFixed(2)}</span>;
+              if (column.key === 'acciones') {
+                return (
+                  <div className="action-cell">
+                    {puedeEditar && <button type="button" onClick={() => abrirEditVario(row)} className="h-10 px-3 text-[12px] font-black uppercase tracking-wide rounded-xl bg-black border border-border-default text-accent hover:bg-yellow-500/10 transition-all">Editar</button>}
+                    {puedeEliminar && <button type="button" onClick={() => eliminarVarFn(row.id)} className="h-10 w-10 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 transition-all flex items-center justify-center"><Trash2 size={16} /></button>}
+                  </div>
+                );
+              }
+              return null;
+            }}
+            footer={
+              <Paginacion
+                paginaActual={paginaActual}
+                totalPaginas={totalPaginas}
+                totalElementos={totalElementos}
+                elementosPorPagina={elementosPorPagina}
+                setPaginaActual={setPaginaActual}
+                setElementosPorPagina={setElementosPorPagina}
+              />
+            }
+          />
         </div>
 
         {/* MOBILE CARDS */}

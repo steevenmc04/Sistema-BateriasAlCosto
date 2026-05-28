@@ -8,6 +8,7 @@ import { usePaginacion } from '../hooks/usePaginacion.js';
 import Paginacion from '../componentes/Paginacion.jsx';
 import Button from '../componentes/Button.jsx';
 import SelectPremium from '../componentes/SelectPremium.jsx';
+import TablePremium from '../componentes/TablePremium.jsx';
 import { tienePermiso } from '../utilidades/permisosCliente.js';
 import PageTitle from '../componentes/PageTitle.jsx';
 
@@ -55,6 +56,13 @@ const VistaFacturas = ({ usuario }) => {
   const esAdmin = tienePermiso(usuario, 'roles_admin');
 
   const [formConfig, setFormConfig] = useState({});
+  const columnasFacturas = [
+    { key: 'numero', label: 'N° Factura · Fecha', widthClassName: 'w-[170px]' },
+    { key: 'cliente', label: 'Cliente' },
+    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
+    { key: 'estado', label: 'Estado', widthClassName: 'w-[150px]', align: 'center' },
+    { key: 'acciones', label: 'Acciones', widthClassName: 'w-[140px]', align: 'center' },
+  ];
   const abrirConfigEmpresa = () => {
     setFormConfig(configEmpresa || { razon_social: '', ruc: '', direccion: '', telefono: '', email: '', ciudad: 'Guayaquil', pais: 'Ecuador', prefijo_factura: 'FAC', iva_porcentaje: 15 });
     setModalConfigEmpresa(true);
@@ -116,61 +124,62 @@ const VistaFacturas = ({ usuario }) => {
        {error && <div className="card-premium text-error font-bold text-sm">{error}</div>}
 
       {/* DESKTOP TABLE */}
-        <div className="hidden md:block table-premium">
-        <div className="table-scroll">
-          <table className="min-w-[980px] w-full text-left text-[12px] text-text-muted table-fixed">
-            <thead className="bg-white/[0.02] text-[10px] font-black uppercase text-text-muted tracking-[0.2em]">
-              <tr>
-                <th className="table-header-cell reference-col">Nº Factura · Fecha</th>
-                <th className="table-header-cell client-col">Cliente</th>
-                <th className="table-header-cell money-header money-col">Total</th>
-                <th className="table-header-cell status-col">Estado</th>
-                <th className="table-header-cell actions-col">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cargando ? (
-                <tr><td colSpan={5} className="table-cell text-center text-text-muted text-[10px] font-black uppercase tracking-widest">Cargando facturas...</td></tr>
-                ) : itemsPaginados.length === 0 ? (
-                <tr><td colSpan={5} className="table-cell text-center text-text-muted text-[10px] font-black uppercase tracking-widest">No se encontraron facturas.</td></tr>
-              ) : (
-                itemsPaginados.map((f) => (
-                  <tr key={f.id} className="transition-colors hover:bg-zinc-900/80 border-b border-border-default">
-                    <td className="table-cell">
-                      <div className="text-text-primary font-bold text-sm">{f.numero_factura}</div>
-                      <div className="table-subtext">{new Date(f.fecha_emision).toLocaleDateString()}</div>
-                    </td>
-                    <td className="table-cell">
-                      <div className="text-text-primary text-sm truncate max-w-[200px]">{f.cliente_nombre}</div>
-                      <div className="table-subtext truncate">{f.cliente_cedula_ruc || 'Consumidor Final'}</div>
-                    </td>
-                    <td className="table-cell"><span className="money-cell">${safeNumber(f.total).toFixed(2)}</span></td>
-                    <td className="table-cell text-center">
-                      <span className={`badge ${f.estado === 'emitida' ? 'badge-success' : 'badge-danger'}`}>{f.estado}</span>
-                      {f.sri_estado === 'AUTORIZADA' && <span className="badge badge-success ml-1">SRI OK</span>}
-                      {f.sri_estado === 'PENDIENTE' && <span className="badge badge-warning ml-1" title={f.sri_error}>SRI PEND</span>}
-                    </td>
-                    <td className="table-cell">
-                      <div className="action-cell">
-                        <button onClick={() => descargarPDF(f.id)} className="p-2 rounded-xl bg-black/50 border border-border-default text-text-muted hover:bg-zinc-900/80 hover:text-text-primary transition-colors" title="Descargar PDF"><Download size={16} /></button>
-                        {f.estado === 'emitida' && puedeAnular && (
-                           <button onClick={() => anularFactura(f.id)} className="p-2 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 hover:text-error transition-all" title="Anular"><Trash2 size={16} /></button>
-                        )}
-                        {f.sri_ride_url && (
-                          <a href={f.sri_ride_url} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-xl border border-success/30 text-success text-[10px] font-black uppercase hover:bg-success/10 transition-all">Ver RIDE</a>
-                        )}
-                        {f.sri_estado === 'PENDIENTE' && (
-                            <button onClick={() => reintentarSRI(f.id)} className="px-3 py-1.5 rounded-xl border border-warning/30 text-warning text-[10px] font-black uppercase hover:bg-warning/10 transition-all">Reintentar SRI</button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <Paginacion paginaActual={paginaActual} totalPaginas={totalPaginas} totalElementos={totalElementos} elementosPorPagina={elementosPorPagina} setPaginaActual={setPaginaActual} setElementosPorPagina={setElementosPorPagina} />
+      <div className="hidden md:block">
+        <TablePremium
+          columns={columnasFacturas}
+          data={itemsPaginados}
+          rowKey={(row) => row.id}
+          loading={cargando}
+          loadingMessage="Cargando facturas..."
+          emptyMessage="No se encontraron facturas."
+          minWidthClass="min-w-[980px]"
+          renderCell={(f, column) => {
+            if (column.key === 'numero') {
+              return (
+                <>
+                  <div className="cell-main">{f.numero_factura}</div>
+                  <div className="cell-sub">{new Date(f.fecha_emision).toLocaleDateString()}</div>
+                </>
+              );
+            }
+            if (column.key === 'cliente') {
+              return (
+                <>
+                  <div className="cell-main truncate">{f.cliente_nombre}</div>
+                  <div className="cell-sub truncate">{f.cliente_cedula_ruc || 'Consumidor Final'}</div>
+                </>
+              );
+            }
+            if (column.key === 'total') return <span className="money-cell">${safeNumber(f.total).toFixed(2)}</span>;
+            if (column.key === 'estado') {
+              return (
+                <div className="action-cell">
+                  <span className={`badge ${f.estado === 'emitida' ? 'badge-success' : 'badge-danger'}`}>{f.estado}</span>
+                  {f.sri_estado === 'AUTORIZADA' && <span className="badge badge-success">SRI OK</span>}
+                  {f.sri_estado === 'PENDIENTE' && <span className="badge badge-warning" title={f.sri_error}>SRI PEND</span>}
+                </div>
+              );
+            }
+            if (column.key === 'acciones') {
+              return (
+                <div className="action-cell">
+                  <button onClick={() => descargarPDF(f.id)} className="h-10 w-10 rounded-xl bg-black/50 border border-border-default text-text-muted hover:bg-zinc-900/80 hover:text-text-primary transition-colors flex items-center justify-center" title="Descargar PDF"><Download size={16} /></button>
+                  {f.estado === 'emitida' && puedeAnular && (
+                    <button onClick={() => anularFactura(f.id)} className="h-10 w-10 rounded-xl bg-red-900/30 border border-red-500/30 text-error hover:bg-red-500/10 hover:text-error transition-all flex items-center justify-center" title="Anular"><Trash2 size={16} /></button>
+                  )}
+                  {f.sri_ride_url && (
+                    <a href={f.sri_ride_url} target="_blank" rel="noreferrer" className="h-10 px-3 rounded-xl border border-success/30 text-success text-[10px] font-black uppercase hover:bg-success/10 transition-all inline-flex items-center">RIDE</a>
+                  )}
+                  {f.sri_estado === 'PENDIENTE' && (
+                    <button onClick={() => reintentarSRI(f.id)} className="h-10 px-3 rounded-xl border border-warning/30 text-warning text-[10px] font-black uppercase hover:bg-warning/10 transition-all">SRI</button>
+                  )}
+                </div>
+              );
+            }
+            return null;
+          }}
+          footer={<Paginacion paginaActual={paginaActual} totalPaginas={totalPaginas} totalElementos={totalElementos} elementosPorPagina={elementosPorPagina} setPaginaActual={setPaginaActual} setElementosPorPagina={setElementosPorPagina} />}
+        />
       </div>
 
       {/* MOBILE CARDS */}

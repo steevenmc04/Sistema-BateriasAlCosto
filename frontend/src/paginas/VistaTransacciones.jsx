@@ -7,6 +7,7 @@ import Paginacion from '../componentes/Paginacion.jsx';
 import Button from '../componentes/Button.jsx';
 import AutocompleteCliente from '../componentes/AutocompleteCliente.jsx';
 import TablaItemsVenta from '../componentes/TablaItemsVenta.jsx';
+import TablePremium from '../componentes/TablePremium.jsx';
 import { tienePermiso } from '../utilidades/permisosCliente.js';
 import { safeNumber } from '../utilidades/safeNumber.js';
 import PageTitle from '../componentes/PageTitle.jsx';
@@ -127,79 +128,88 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
     </div>
   ) : null;
 
-  const renderTable = (items, tabType) => {
-    if (h.cargando) {
-      return <tr><td colSpan={8} className="px-8 py-20 text-center text-text-muted text-xs uppercase font-black tracking-widest">Cargando historial...</td></tr>;
+  const columnasVenta = [
+    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
+    { key: 'producto', label: 'Producto', widthClassName: 'w-[250px]' },
+    { key: 'cliente', label: 'Cliente', widthClassName: 'w-[240px]' },
+    { key: 'cantidad', label: 'Cant.', widthClassName: 'w-[100px]', align: 'center' },
+    { key: 'items', label: 'Items', widthClassName: 'w-[90px]', align: 'center' },
+    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
+    { key: 'vendedor', label: 'Vendedor', widthClassName: 'w-[170px]' },
+    { key: 'acciones', label: 'Acciones', widthClassName: 'w-[120px]', align: 'center' },
+  ];
+  const columnasCompra = [
+    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
+    { key: 'producto', label: 'Producto', widthClassName: 'w-[250px]' },
+    { key: 'cantidad', label: 'Cant.', widthClassName: 'w-[100px]', align: 'center' },
+    { key: 'items', label: 'Items', widthClassName: 'w-[90px]', align: 'center' },
+    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
+    { key: 'usuario', label: 'Usuario', widthClassName: 'w-[170px]' },
+    { key: 'acciones', label: 'Acciones', widthClassName: 'w-[120px]', align: 'center' },
+  ];
+  const columnasChatarra = [
+    { key: 'fecha', label: 'Fecha', widthClassName: 'w-[130px]' },
+    { key: 'tipo', label: 'Tipo', widthClassName: 'w-[120px]', align: 'center' },
+    { key: 'producto', label: 'Producto', widthClassName: 'w-[250px]' },
+    { key: 'cantidad', label: 'Cant.', widthClassName: 'w-[100px]', align: 'center' },
+    { key: 'items', label: 'Items', widthClassName: 'w-[90px]', align: 'center' },
+    { key: 'total', label: 'Total', widthClassName: 'w-[150px]', align: 'right' },
+    { key: 'usuario', label: 'Usuario', widthClassName: 'w-[170px]' },
+  ];
+
+  const renderDesktopCell = (item, column) => {
+    if (h.tab === 'venta') {
+      if (column.key === 'fecha') return <><div className="cell-main">{formatearFecha(item.creado_en)}</div><div className="cell-sub text-yellow-100">{item.producto_codigo || ''}</div></>;
+      if (column.key === 'producto') return <><div className="cell-main">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub uppercase">{item.producto_condicion || ''}</div></>;
+      if (column.key === 'cliente') return <><div className="cell-main">{item.cliente_nombre || 'Consumidor Final'}</div><div className="cell-sub">{item.cliente_documento || ''}</div></>;
+      if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
+      if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
+      if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
+      if (column.key === 'vendedor') return <span className="cell-main text-[12px] uppercase">{item.usuario_nombre}</span>;
+      if (column.key === 'acciones') {
+        return (
+          <div className="action-cell">
+            {tienePermiso(usuario, 'facturacion_emitir') && (
+              <button onClick={() => navigate('/facturacion', { state: { nuevaFacturaVenta: {
+                id: item.id, venta_id: item.id, cliente_nombre: item.cliente_nombre || '',
+                cliente_cedula_ruc: item.cliente_documento || '', cliente_email: item.cliente_email || '',
+                cliente_telefono: item.cliente_telefono || '', cliente_direccion: item.cliente_direccion || '',
+                con_iva: Number(item.monto_iva) > 0, descuento_global: 0,
+                notas: `Venta registrada el ${formatearFecha(item.creado_en)}`,
+                items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, item.producto_codigo].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total) / Number(item.cantidad_total) : 0), descuento: 0 }],
+              } } })} className="h-10 w-10 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors flex items-center justify-center" title="Emitir factura"><FileText size={16} /></button>
+            )}
+          </div>
+        );
+      }
+      return null;
     }
-    if (items.length === 0) {
-      return <tr><td colSpan={8} className="px-8 py-20 text-center text-text-muted text-xs uppercase font-black tracking-widest">No hay transacciones registradas</td></tr>;
+
+    if (h.tab === 'compra') {
+      if (column.key === 'fecha') return <span className="cell-main">{formatearFecha(item.creado_en)}</span>;
+      if (column.key === 'producto') return <><div className="cell-main">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub uppercase">{item.producto_condicion || ''}</div></>;
+      if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
+      if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
+      if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
+      if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase">{item.usuario_nombre}</span>;
+      if (column.key === 'acciones') {
+        return (
+          <div className="action-cell">
+            <button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="h-10 w-10 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors flex items-center justify-center" title="Copiar factura"><FileText size={16} /></button>
+          </div>
+        );
+      }
+      return null;
     }
-    return items.map((item) => (
-      <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
-        {tabType === 'venta' ? (
-          <>
-            <td className="table-cell">
-              <div className="text-text-primary font-bold text-sm">{formatearFecha(item.creado_en)}</div>
-              <div className="table-subtext text-yellow-100 font-black">{item.producto_codigo || ''}</div>
-            </td>
-            <td className="table-cell">
-              <div className="text-text-primary text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
-               <div className="table-subtext uppercase">{item.producto_condicion || ''}</div>
-            </td>
-            <td className="table-cell">
-              <div className="text-text-primary text-sm">{item.cliente_nombre || 'Consumidor Final'}</div>
-               <div className="table-subtext">{item.cliente_documento || ''}</div>
-            </td>
-            <td className="table-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
-            <td className="table-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
-            <td className="table-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
-            <td className="table-cell">
-              <div className="action-cell">
-                {tienePermiso(usuario, 'facturacion_emitir') && (
-                <button onClick={() => navigate('/facturacion', { state: { nuevaFacturaVenta: {
-                  id: item.id, venta_id: item.id, cliente_nombre: item.cliente_nombre || '',
-                  cliente_cedula_ruc: item.cliente_documento || '', cliente_email: item.cliente_email || '',
-                  cliente_telefono: item.cliente_telefono || '', cliente_direccion: item.cliente_direccion || '',
-                  con_iva: Number(item.monto_iva) > 0, descuento_global: 0,
-                  notas: `Venta registrada el ${formatearFecha(item.creado_en)}`,
-                  items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, item.producto_codigo].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total)/Number(item.cantidad_total) : 0), descuento: 0 }],
-                }}})} className="p-2 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors" title="Emitir factura"><FileText size={16} /></button>
-              )}
-              </div>
-            </td>
-          </>
-        ) : tabType === 'compra' ? (
-          <>
-            <td className="table-cell text-text-primary font-bold text-sm">{formatearFecha(item.creado_en)}</td>
-            <td className="table-cell">
-              <div className="text-text-primary text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
-              <div className="table-subtext uppercase">{item.producto_condicion || ''}</div>
-            </td>
-            <td className="table-cell text-center font-black text-text-primary">{item.cantidad_total || '-'}</td>
-            <td className="table-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
-            <td className="table-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
-            <td className="table-cell"><div className="action-cell"><button onClick={() => navigator.clipboard?.writeText(item.numero_factura || '')} className="p-2 rounded-xl text-text-muted hover:bg-yellow-100/10 hover:text-yellow-100 transition-colors" title="Copiar factura"><FileText size={16} /></button></div></td>
-          </>
-        ) : (
-          <>
-            <td className="table-cell text-white font-bold text-sm">{formatearFecha(item.creado_en)}</td>
-            <td className="table-cell text-center">
-              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${item.tipo_operacion === 'salida' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>{item.tipo_operacion}</span>
-            </td>
-            <td className="table-cell">
-              <div className="text-white text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div>
-              <div className="table-subtext">{item.notas || ''}</div>
-            </td>
-            <td className="table-cell text-center font-black text-white">{item.cantidad_total || '-'}</td>
-            <td className="table-cell text-center text-text-muted text-xs">{item.cantidad_items || '1'}</td>
-            <td className="table-cell"><span className="money-cell">${safeNumber(item.total).toFixed(2)}</span></td>
-            <td className="table-cell text-right text-[10px] font-black uppercase text-text-muted">{item.usuario_nombre}</td>
-          </>
-        )}
-      </tr>
-    ));
+
+    if (column.key === 'fecha') return <span className="cell-main">{formatearFecha(item.creado_en)}</span>;
+    if (column.key === 'tipo') return <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg ${item.tipo_operacion === 'salida' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}>{item.tipo_operacion}</span>;
+    if (column.key === 'producto') return <><div className="cell-main">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub">{item.notas || ''}</div></>;
+    if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
+    if (column.key === 'items') return <span className="cell-main">{item.cantidad_items || '1'}</span>;
+    if (column.key === 'total') return <span className="money-cell">${safeNumber(item.total).toFixed(2)}</span>;
+    if (column.key === 'usuario') return <span className="cell-main text-[12px] uppercase">{item.usuario_nombre}</span>;
+    return null;
   };
 
   const renderMobileCards = (items, tabType) => {
@@ -299,28 +309,28 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
 
       <ErrorPanel />
 
-      <div className="table-premium bg-zinc-900/50 backdrop-blur-xl">
-        <div className="hidden md:block table-scroll">
-          <table className="w-full text-left border-collapse table-fixed min-w-[980px]">
-            <thead>
-              <tr className="border-b border-border-default text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">
-                {h.tab === 'venta' ? (
-                  <><th className="table-header-cell reference-col">Fecha</th><th className="table-header-cell product-col">Producto</th><th className="table-header-cell client-col">Cliente</th><th className="table-header-cell quantity-col">Cant.</th><th className="table-header-cell items-col">Items</th><th className="table-header-cell money-header money-col">Total</th><th className="table-header-cell money-col">Vendedor</th><th className="table-header-cell actions-col">Acciones</th></>
-                ) : h.tab === 'compra' ? (
-                  <><th className="table-header-cell reference-col">Fecha</th><th className="table-header-cell product-col">Producto</th><th className="table-header-cell quantity-col">Cant.</th><th className="table-header-cell items-col">Items</th><th className="table-header-cell money-header money-col">Total</th><th className="table-header-cell money-col">Usuario</th><th className="table-header-cell actions-col">Acciones</th></>
-                ) : (
-                  <><th className="table-header-cell reference-col">Fecha</th><th className="table-header-cell reference-col text-center">Tipo</th><th className="table-header-cell product-col">Producto</th><th className="table-header-cell quantity-col">Cant.</th><th className="table-header-cell items-col">Items</th><th className="table-header-cell money-header money-col">Total</th><th className="table-header-cell money-col">Usuario</th></>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {renderTable(
-                itemsPaginados,
-                h.tab
-              )}
-            </tbody>
-          </table>
-          <Paginacion paginaActual={paginaActual} totalPaginas={totalPaginas} totalElementos={totalElementos} elementosPorPagina={elementosPorPagina} setPaginaActual={setPaginaActual} setElementosPorPagina={setElementosPorPagina} />
+      <div className="space-y-0">
+        <div className="hidden md:block">
+          <TablePremium
+            columns={h.tab === 'venta' ? columnasVenta : h.tab === 'compra' ? columnasCompra : columnasChatarra}
+            data={itemsPaginados}
+            rowKey={(row) => row.id}
+            loading={h.cargando}
+            loadingMessage="Cargando historial..."
+            emptyMessage="No hay transacciones registradas"
+            minWidthClass={h.tab === 'chatarra' ? 'min-w-[1110px]' : 'min-w-[1250px]'}
+            renderCell={renderDesktopCell}
+            footer={
+              <Paginacion
+                paginaActual={paginaActual}
+                totalPaginas={totalPaginas}
+                totalElementos={totalElementos}
+                elementosPorPagina={elementosPorPagina}
+                setPaginaActual={setPaginaActual}
+                setElementosPorPagina={setElementosPorPagina}
+              />
+            }
+          />
         </div>
         <div className="md:hidden p-4 space-y-4">
           {h.cargando ? (
