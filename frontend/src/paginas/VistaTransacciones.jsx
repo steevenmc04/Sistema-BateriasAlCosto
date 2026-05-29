@@ -18,6 +18,13 @@ const formatearFecha = (f) => {
   try { return new Date(f).toLocaleDateString(); } catch { return '-'; }
 };
 
+const obtenerCodigoMostrado = (item = {}) => {
+  const codigoManual = String(item.codigo_manual || '').trim();
+  if (codigoManual) return codigoManual;
+  const codigoProducto = String(item.producto_codigo || item.codigo || '').trim();
+  return codigoProducto || '-';
+};
+
 const obtenerEtiquetaOperacionChatarra = (tipoOperacion) => {
   if (tipoOperacion === 'entrada') return 'Compra';
   if (tipoOperacion === 'salida') return 'Venta';
@@ -237,7 +244,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
 
   const renderDesktopCell = (item, column) => {
     if (h.tab === 'venta') {
-      if (column.key === 'fecha') return <><div className="cell-main">{formatearFecha(item.creado_en)}</div><div className="cell-sub text-yellow-100">{item.producto_codigo || ''}</div></>;
+      if (column.key === 'fecha') return <><div className="cell-main">{formatearFecha(item.creado_en)}</div><div className="cell-sub text-yellow-100">{obtenerCodigoMostrado(item)}</div></>;
       if (column.key === 'producto') return <><div className="cell-main truncate">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</div><div className="cell-sub uppercase truncate">{item.producto_condicion || ''}</div></>;
       if (column.key === 'cliente') return <><div className="cell-main truncate">{item.cliente_nombre || 'Consumidor Final'}</div><div className="cell-sub truncate">{item.cliente_documento || ''}</div></>;
       if (column.key === 'cantidad') return <span className="cell-main">{item.cantidad_total || '-'}</span>;
@@ -254,7 +261,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                 cliente_telefono: item.cliente_telefono || '', cliente_direccion: item.cliente_direccion || '',
                 con_iva: Number(item.monto_iva) > 0, descuento_global: 0,
                 notas: `Venta registrada el ${formatearFecha(item.creado_en)}`,
-                items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, item.producto_codigo].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total) / Number(item.cantidad_total) : 0), descuento: 0 }],
+                items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, obtenerCodigoMostrado(item)].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total) / Number(item.cantidad_total) : 0), descuento: 0 }],
               } } })} className="action-btn action-btn-icon" title="Emitir factura"><FileText size={16} /></button>
             )}
           </div>
@@ -304,7 +311,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
           <>
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-yellow-100 font-black text-[10px] uppercase tracking-wider">{item.producto_codigo || ''}</p>
+                <p className="text-yellow-100 font-black text-[10px] uppercase tracking-wider">{obtenerCodigoMostrado(item)}</p>
                 <h3 className="text-text-primary font-bold text-sm">{item.producto_marca || ''} {item.producto_tipo_caja || ''}</h3>
                 <p className="text-[10px] text-text-muted uppercase">{formatearFecha(item.creado_en)} · {item.cliente_nombre || 'Consumidor Final'}</p>
               </div>
@@ -322,7 +329,7 @@ const VistaTransacciones = ({ usuario, tabPredeterminado = 'venta' }) => {
                   cliente_telefono: item.cliente_telefono || '', cliente_direccion: item.cliente_direccion || '',
                   con_iva: Number(item.monto_iva) > 0, descuento_global: 0,
                   notas: `Venta registrada el ${formatearFecha(item.creado_en)}`,
-                  items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, item.producto_codigo].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total)/Number(item.cantidad_total) : 0), descuento: 0 }],
+                  items: [{ descripcion: [item.producto_marca, item.producto_tipo_caja, item.producto_condicion, obtenerCodigoMostrado(item)].filter(Boolean).join(' - '), cantidad: Number(item.cantidad_total) || 1, precio_unitario: item.precio_unitario || (item.cantidad_total && item.total ? Number(item.total)/Number(item.cantidad_total) : 0), descuento: 0 }],
                  }}})} className="flex items-center gap-2 text-yellow-100 text-[10px] font-black uppercase tracking-widest border border-border-default px-3 py-2 rounded-xl"><FileText size={14} /> Facturar</button>
               )}
             </div>

@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { inventarioAPI, chatarraAPI, extraerMensajeError } from '../servicios/servicios.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
+import {
+  esBateria as esProductoBateria,
+  esVario as esProductoVario,
+  esChatarra as esProductoChatarra,
+} from '../utilidades/clasificarProducto.js';
 
 const vacioBateria = () => ({
   codigo: '',
@@ -288,7 +293,7 @@ export function useVistaProductos() {
   const chatarraDesdeInventario = useMemo(
     () =>
       (productosUnificados || [])
-        .filter((p) => obtenerCategoriaInventario(p) === 'chatarra')
+        .filter((p) => esProductoChatarra(p))
         .map((p) => ({
           id: `chatarra-prod-${p.id}`,
           codigo: p.codigo || `CHAT-${p.id}`,
@@ -322,12 +327,14 @@ export function useVistaProductos() {
   }, [chatarra]);
 
   const bFiltradas = useMemo(() => {
-    const conStock = filtrarPorStock(baterias, filtroStock);
+    const base = (baterias || []).filter((item) => esProductoBateria(item));
+    const conStock = filtrarPorStock(base, filtroStock);
     return filtrarPorTexto(conStock, busqueda, ['codigo', 'marca', 'tipo_caja']);
   }, [baterias, busqueda, filtroStock]);
 
   const vFiltradas = useMemo(() => {
-    const conStock = filtrarPorStock(varios, filtroStock);
+    const base = (varios || []).filter((item) => esProductoVario(item));
+    const conStock = filtrarPorStock(base, filtroStock);
     return filtrarPorTexto(conStock, busqueda, ['codigo', 'nombre', 'descripcion']);
   }, [varios, busqueda, filtroStock]);
 

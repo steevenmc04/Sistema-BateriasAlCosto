@@ -65,8 +65,6 @@ class ControladorInventarioLegacy {
           SELECT marca FROM inventario_baterias WHERE marca IS NOT NULL AND marca != ''
           UNION
           SELECT marca FROM compras_inventario WHERE marca IS NOT NULL AND marca != ''
-          UNION
-          SELECT marca FROM productos WHERE marca IS NOT NULL AND marca != ''
         ) t ORDER BY marca`
       );
       const [tipos] = await pool.query(
@@ -74,10 +72,6 @@ class ControladorInventarioLegacy {
           SELECT tipo_caja FROM inventario_baterias WHERE tipo_caja IS NOT NULL AND tipo_caja != ''
           UNION
           SELECT tipo_caja FROM compras_inventario WHERE tipo_caja IS NOT NULL AND tipo_caja != ''
-          UNION
-          SELECT tipo_caja FROM chatarra_inventario WHERE tipo_caja IS NOT NULL AND tipo_caja != ''
-          UNION
-          SELECT tipo_caja FROM productos WHERE tipo_caja IS NOT NULL AND tipo_caja != ''
         ) t ORDER BY tipo_caja`
       );
       const [condiciones] = await pool.query(
@@ -85,8 +79,6 @@ class ControladorInventarioLegacy {
           SELECT condicion FROM inventario_baterias WHERE condicion IS NOT NULL AND condicion != ''
           UNION
           SELECT condicion FROM compras_inventario WHERE condicion IS NOT NULL AND condicion != ''
-          UNION
-          SELECT condicion FROM productos WHERE condicion IS NOT NULL AND condicion != ''
         ) t ORDER BY condicion`
       );
       res.json({

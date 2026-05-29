@@ -3,7 +3,7 @@ import { Trash2, Search, X } from 'lucide-react';
 import Badge from './Badge.jsx';
 import SelectPremium from './SelectPremium.jsx';
 import { safeNumber } from '../utilidades/safeNumber.js';
-import { esBateria } from '../utilidades/esProductoBateria.js';
+import { esBateria, esVario } from '../utilidades/clasificarProducto.js';
 
 const Field = ({ label, className = '', children }) => (
   <div className={`pos-field ${className}`}>
@@ -40,7 +40,7 @@ function BuscadorInline({ productos, valorInicial, onSelect, onChange, mode }) {
     const q = text.trim().toLowerCase();
     let base = productos || [];
     const esBateriaProducto = (p) => esBateria(p);
-    if (mode === 'varios') base = base.filter((p) => !esBateriaProducto(p));
+    if (mode === 'varios') base = base.filter((p) => esVario(p));
     if (mode === 'bateria') base = base.filter((p) => esBateriaProducto(p));
     if (!q) return base.slice(0, 10);
     return base.filter((p) =>
@@ -115,7 +115,7 @@ export default function TablaItemsVenta({
     }
     return (productos || []).filter((p) => esBateria(p));
   }, [productos, tipoModal]);
-  const productosVarios = useMemo(() => (productos || []).filter((p) => !esBateria(p)), [productos]);
+  const productosVarios = useMemo(() => (productos || []).filter((p) => esVario(p)), [productos]);
 
   const getBateriaMatch = (marca, tipoCaja) => {
     if (!marca || !tipoCaja) return null;

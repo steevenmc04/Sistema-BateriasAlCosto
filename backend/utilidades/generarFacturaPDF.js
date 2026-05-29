@@ -207,8 +207,6 @@ export const generarFacturaPDF = (factura) => {
       };
 
       ft('Subtotal', factura.subtotal);
-      ft('Descuento', factura.descuento);
-      ft('Subtotal neto', factura.base_imponible);
       ft(`IVA (${Number(factura.iva_porcentaje || 0).toFixed(0)}%)`, factura.monto_iva);
 
       doc.moveTo(cx, y).lineTo(cx + cw, y).strokeColor('#94a3b8').lineWidth(0.8).stroke();

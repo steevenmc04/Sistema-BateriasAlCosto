@@ -3,6 +3,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { informesAPI } from '../servicios/servicios.js';
 import { safeNumber } from '../utilidades/safeNumber.js';
+import {
+  esBateria as esBateriaProducto,
+  esChatarra as esChatarraProducto,
+  esVario as esVarioProducto,
+} from '../utilidades/clasificarProducto.js';
 
 const OPCIONES_TIPO_REPORTE = [
   { label: 'Ventas (Todas)', value: 'ventas_todas' },
@@ -90,6 +95,9 @@ const esChatarra = (item = {}) => {
 };
 
 const esVario = (item = {}) => !esBateria(item) && !esChatarra(item);
+const esBateriaClasificada = (item = {}) => esBateriaProducto(item);
+const esChatarraClasificada = (item = {}) => esChatarraProducto(item);
+const esVarioClasificado = (item = {}) => esVarioProducto(item);
 
 const inicioDia = (d) => {
   const x = new Date(d);
@@ -156,7 +164,7 @@ const obtenerCodigoManual = (r = {}) => {
 };
 
 const normalizarVenta = (item = {}) => {
-  const categoriaMovimiento = esBateria(item) || String(item.tipo || '').toLowerCase() === 'bateria'
+  const categoriaMovimiento = esBateriaClasificada(item) || String(item.tipo || '').toLowerCase() === 'bateria'
     ? 'bateria'
     : 'varios';
 
@@ -178,7 +186,7 @@ const normalizarVenta = (item = {}) => {
 };
 
 const normalizarCompra = (item = {}) => {
-  const categoriaMovimiento = esBateria(item) ? 'bateria' : esVario(item) ? 'varios' : 'varios';
+  const categoriaMovimiento = esBateriaClasificada(item) ? 'bateria' : esVarioClasificado(item) ? 'varios' : 'varios';
 
   return {
     id: `compra-${item.id ?? item.codigo_item ?? Math.random().toString(36).slice(2)}`,
@@ -220,9 +228,9 @@ const normalizarChatarra = (item = {}) => {
 
 const normalizarInventario = (item = {}) => {
   const total = safeNumber(item.cantidad) * safeNumber(item.precio);
-  const categoriaMovimiento = esChatarra(item)
+  const categoriaMovimiento = esChatarraClasificada(item)
     ? 'chatarra'
-    : esBateria(item)
+    : esBateriaClasificada(item)
       ? 'bateria'
       : 'varios';
 

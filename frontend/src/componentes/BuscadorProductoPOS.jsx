@@ -1,7 +1,7 @@
 ﻿import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { safeNumber } from '../utilidades/safeNumber.js';
-import { esProductoBateria } from '../utilidades/esProductoBateria.js';
+import { esBateria as esProductoBateria, esVario as esProductoVario } from '../utilidades/clasificarProducto.js';
 
 const normalizarProductoPOS = (p = {}) => {
   const stock = safeNumber(p.stock ?? p.stock_actual ?? p.cantidad_disponible ?? p.cantidad ?? 0);
@@ -42,7 +42,7 @@ export default function BuscadorProductoPOS({
 
     // base list (apply mode filter first)
     let base = normalizados;
-    if (mode === 'varios') base = normalizados.filter((p) => !esProductoBateria(p));
+    if (mode === 'varios') base = normalizados.filter((p) => esProductoVario(p));
     if (mode === 'bateria') base = normalizados.filter((p) => esProductoBateria(p));
     if (!q) return base.slice(0, 10);
     return base

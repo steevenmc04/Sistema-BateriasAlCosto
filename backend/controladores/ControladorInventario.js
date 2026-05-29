@@ -10,9 +10,33 @@ import Auditoria from '../modelos/Auditoria.js';
  */
 class ControladorInventario {
   static _cacheTieneColumnaTipo = null;
+  static _cacheTieneColumnaTipoInventario = null;
 
   static _normalizarTexto(valor) {
     return String(valor || '').trim().toLowerCase();
+  }
+
+  static _esChatarraPOS(row) {
+    if (!row || typeof row !== 'object') return false;
+    const tipo = ControladorInventario._normalizarTexto(row.tipo);
+    if (tipo === 'chatarra') return true;
+
+    const texto = [
+      row.categoria,
+      row.tipo_producto,
+      row.tipo,
+      row.nombre_categoria,
+      row.condicion,
+      row.estado,
+      row.nombre,
+      row.descripcion,
+      row.codigo,
+    ]
+      .filter(Boolean)
+      .map((v) => ControladorInventario._normalizarTexto(v))
+      .join(' ');
+
+    return texto.includes('chatarra') || texto.includes('chat-');
   }
 
   static async _existeColumnaTipoProductos() {
@@ -35,8 +59,34 @@ class ControladorInventario {
     return ControladorInventario._cacheTieneColumnaTipo;
   }
 
+  static async _existeColumnaTipoInventarioProductos() {
+    if (ControladorInventario._cacheTieneColumnaTipoInventario !== null) {
+      return ControladorInventario._cacheTieneColumnaTipoInventario;
+    }
+    try {
+      const [rows] = await pool.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tipo_inventario'
+         LIMIT 1`
+      );
+      ControladorInventario._cacheTieneColumnaTipoInventario = rows.length > 0;
+    } catch {
+      ControladorInventario._cacheTieneColumnaTipoInventario = false;
+    }
+    return ControladorInventario._cacheTieneColumnaTipoInventario;
+  }
+
   static _esBateriaPOS(row) {
     if (!row || typeof row !== 'object') return false;
+    if (ControladorInventario._esChatarraPOS(row)) return false;
+
+    const tipo = ControladorInventario._normalizarTexto(row.tipo);
+    if (tipo === 'bateria') return true;
+    if (tipo === 'varios') return false;
+
     if (row.es_bateria === true || Number(row.es_bateria) === 1) return true;
     if (row.es_bateria === false || Number(row.es_bateria) === 0) return false;
 
@@ -55,11 +105,40 @@ class ControladorInventario {
 
     const codigo = ControladorInventario._normalizarTexto(row.codigo);
     if (codigo.startsWith('bat-')) return true;
+    if (codigo.startsWith('ecu-')) return true;
+    if (codigo.startsWith('bsh-')) return true;
 
     const tipoCaja = ControladorInventario._normalizarTexto(row.tipo_caja);
     const marca = ControladorInventario._normalizarTexto(row.marca);
+    const nombre = ControladorInventario._normalizarTexto(row.nombre);
+    const descripcion = ControladorInventario._normalizarTexto(row.descripcion);
+    const textoLibre = `${nombre} ${descripcion}`;
+    if (
+      textoLibre.includes('agua') ||
+      textoLibre.includes('acido') ||
+      textoLibre.includes('ácido') ||
+      textoLibre.includes('accesorio') ||
+      textoLibre.includes('vario')
+    ) {
+      return false;
+    }
+
     const marcasBateria = ['bosch', 'dacar', 'ecuador'];
-    if (marcasBateria.includes(marca) && tipoCaja.includes('caja')) return true;
+    const tipoCajaValido = tipoCaja && tipoCaja !== '-' && tipoCaja !== 'n/a' && tipoCaja !== 'na';
+    if (
+      marcasBateria.includes(marca) &&
+      tipoCajaValido &&
+      (
+        tipoCaja.includes('caja') ||
+        tipoCaja.includes('amp') ||
+        tipoCaja.includes('ah') ||
+        tipoCaja.includes('hp') ||
+        tipoCaja.includes('fe') ||
+        /\d/.test(tipoCaja)
+      )
+    ) {
+      return true;
+    }
 
     return false;
   }
@@ -93,6 +172,10 @@ class ControladorInventario {
   static async listarParaPOS(req, res) {
     try {
       const tieneColumnaTipo = await ControladorInventario._existeColumnaTipoProductos();
+      const tieneColumnaTipoInventario = await ControladorInventario._existeColumnaTipoInventarioProductos();
+      const columnaTipoSelect = tieneColumnaTipo
+        ? 'p.tipo'
+        : (tieneColumnaTipoInventario ? 'p.tipo_inventario AS tipo' : "'' AS tipo");
 
       // --- 1. Asegurar que productos tenga datos (sync desde inventario_baterias si es necesario) ---
       const [check] = await pool.query('SELECT COUNT(*) AS total FROM productos WHERE activo = 1');
@@ -113,7 +196,7 @@ class ControladorInventario {
           p.marca,
           p.tipo_caja,
           p.condicion,
-          ${tieneColumnaTipo ? 'p.tipo' : "'' AS tipo"},
+          ${columnaTipoSelect},
           COALESCE(p.precio_venta, p.precio_costo, 0) AS precio,
           COALESCE(s.cantidad, 0) AS stock,
           COALESCE(c.nombre, '') AS categoria
@@ -132,7 +215,9 @@ class ControladorInventario {
         const tipoRaw = ControladorInventario._normalizarTexto(p.tipo);
         const tipoInventario = ['bateria', 'varios', 'chatarra'].includes(tipoRaw)
           ? tipoRaw
-          : (ControladorInventario._esBateriaPOS(p) ? 'bateria' : 'varios');
+          : (ControladorInventario._esChatarraPOS(p)
+              ? 'chatarra'
+              : (ControladorInventario._esBateriaPOS(p) ? 'bateria' : 'varios'));
         const esBateria = tipoInventario === 'bateria';
         const stock = Number(p.stock ?? 0);
         const precio = Number(p.precio ?? 0);

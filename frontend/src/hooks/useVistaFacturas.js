@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import apiCliente, { apiUrl, extraerMensajeError, facturasAPI, inventarioAPI } from '../servicios/servicios.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
+import {
+  esBateria as clasificarBateria,
+  esVario as clasificarVario,
+  esChatarra as clasificarChatarra,
+} from '../utilidades/clasificarProducto.js';
 
 const normalizarTexto = (valor) => String(valor || '').trim().toLowerCase();
 const aNumeroSeguro = (valor, fallback = 0) => {
@@ -41,49 +46,9 @@ const normalizarProductoPOS = (p = {}) => {
   };
 };
 
-const esChatarraProducto = (producto = {}) => {
-  const texto = [
-    producto.tipo_inventario,
-    producto.categoria,
-    producto.tipo_producto,
-    producto.condicion,
-    producto.descripcion,
-    producto.nombre,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-
-  return normalizarTexto(producto.tipo_inventario) === 'chatarra' || texto.includes('chatarra');
-};
-
-const esBateriaProducto = (producto = {}) => {
-  if (esChatarraProducto(producto)) return false;
-
-  const texto = [
-    producto.tipo_inventario,
-    producto.categoria,
-    producto.tipo_producto,
-    producto.nombre_categoria,
-    producto.tipo,
-    producto.condicion,
-    producto.tipo_caja,
-    producto.descripcion,
-    producto.nombre,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-
-  return (
-    normalizarTexto(producto.tipo_inventario) === 'bateria' ||
-    producto.es_bateria === true ||
-    texto.includes('bateria') ||
-    Boolean(producto.tipo_caja)
-  );
-};
-
-const esVarioProducto = (producto = {}) => !esBateriaProducto(producto) && !esChatarraProducto(producto);
+const esChatarraProducto = (producto = {}) => clasificarChatarra(producto);
+const esBateriaProducto = (producto = {}) => clasificarBateria(producto);
+const esVarioProducto = (producto = {}) => clasificarVario(producto);
 
 const descripcionBateria = (producto = {}) =>
   [producto.marca, producto.tipo_caja, producto.condicion, producto.codigo].filter(Boolean).join(' - ');

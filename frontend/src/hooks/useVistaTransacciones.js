@@ -3,7 +3,7 @@ import { ventasAPI, comprasAPI, chatarraAPI, facturasAPI, API, extraerMensajeErr
 import apiCliente from '../servicios/servicios.js';
 import { useOperacionMultiItem } from './useOperacionMultiItem.js';
 import { notificarGlobal } from '../contextos/NotificacionContexto.jsx';
-import { esProductoBateria } from '../utilidades/esProductoBateria.js';
+import { esBateria as esProductoBateria, esVario as esProductoVario, esChatarra as esProductoChatarra } from '../utilidades/clasificarProducto.js';
 
 const aNumeroSeguro = (valor, fallback = 0) => {
   const n = Number(valor);
@@ -22,7 +22,7 @@ const normalizarProductoPOS = (p = {}) => {
     codigo: p.codigo ?? p.referencia ?? '',
     nombre: p.nombre ?? p.descripcion ?? '',
     marca: p.marca ?? p.nombre ?? '',
-    tipo_caja: p.tipo_caja ?? p.descripcion ?? p.nombre ?? '',
+    tipo_caja: p.tipo_caja ?? '',
     categoria: p.categoria ?? p.nombre_categoria ?? '',
     tipo_producto: p.tipo_producto ?? p.tipo ?? '',
     tipo_inventario: p.tipo_inventario ?? p.tipo ?? p.tipo_producto ?? '',
@@ -80,42 +80,9 @@ export const useVistaTransacciones = (tabPredeterminado = 'venta') => {
       const res = await apiCliente.get(`${API}/api/inventario/productos-pos?t=${ts}`);
       const productosArray = Array.isArray(res.data) ? res.data : res.data?.data || [];
       const productosNormalizados = productosArray.map(normalizarProductoPOS);
-      const chatarraFiltrados = productosNormalizados.filter((p) => {
-        const tipoInventario = String(p.tipo_inventario || p.tipo || p.tipo_producto || '').toLowerCase();
-        if (tipoInventario === 'chatarra') return true;
-        const texto = [
-          p.categoria,
-          p.tipo_producto,
-          p.tipo,
-          p.nombre_categoria,
-          p.condicion,
-          p.descripcion,
-          p.nombre,
-        ].filter(Boolean).join(' ').toLowerCase();
-        return texto.includes('chatarra');
-      });
-      const bateriasFiltradas = productosNormalizados.filter((p) => {
-        const tipoInventario = String(p.tipo_inventario || p.tipo || p.tipo_producto || '').toLowerCase();
-        if (tipoInventario === 'chatarra') return false;
-        if (tipoInventario === 'bateria') return true;
-        const texto = [p.categoria, p.tipo_producto, p.tipo, p.condicion, p.descripcion, p.nombre]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        if (texto.includes('chatarra')) return false;
-        return esProductoBateria(p);
-      });
-      const variosFiltrados = productosNormalizados.filter((p) => {
-        const tipoInventario = String(p.tipo_inventario || p.tipo || p.tipo_producto || '').toLowerCase();
-        if (tipoInventario === 'chatarra') return false;
-        if (tipoInventario === 'varios') return true;
-        const texto = [p.categoria, p.tipo_producto, p.tipo, p.condicion, p.descripcion, p.nombre]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        if (texto.includes('chatarra')) return false;
-        return !esProductoBateria(p);
-      });
+      const chatarraFiltrados = productosNormalizados.filter((p) => esProductoChatarra(p));
+      const bateriasFiltradas = productosNormalizados.filter((p) => esProductoBateria(p));
+      const variosFiltrados = productosNormalizados.filter((p) => esProductoVario(p));
 
       setProductosBateria(bateriasFiltradas);
       setProductosVarios(variosFiltrados);
