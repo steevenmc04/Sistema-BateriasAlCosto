@@ -13,6 +13,66 @@ class FacturaLegacy {
   static _cacheTieneCodigoManualDetalleVentas = null;
   static _cacheTieneColumnaVentaPosIdFacturas = null;
   static _cacheTieneTablaEmpresaConfig = null;
+  static _cacheColumnasProductos = new Map();
+
+  static _normalizarTexto(valor) {
+    return String(valor ?? '').trim().toLowerCase();
+  }
+
+  static _esProductoBateria(producto = {}) {
+    const tipoInventario = FacturaLegacy._normalizarTexto(producto.tipo_inventario || producto.tipo);
+    if (tipoInventario === 'bateria') return true;
+    if (tipoInventario === 'varios' || tipoInventario === 'chatarra') return false;
+
+    if (producto.es_bateria === true || Number(producto.es_bateria) === 1) return true;
+    if (producto.es_bateria === false || Number(producto.es_bateria) === 0) return false;
+
+    const categoriaTexto = [
+      producto.categoria,
+      producto.tipo_producto,
+      producto.nombre_categoria
+    ]
+      .map(FacturaLegacy._normalizarTexto)
+      .join(' ');
+
+    if (categoriaTexto.includes('bateria') || categoriaTexto.includes('batería')) {
+      return true;
+    }
+
+    const tipoCaja = FacturaLegacy._normalizarTexto(producto.tipo_caja);
+    return Boolean(tipoCaja);
+  }
+
+  static _textoSinGuiones(texto) {
+    return String(texto ?? '')
+      .replace(/\s*-\s*/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  static _codigoBateriaFactura(item = {}) {
+    const codigoManual = FacturaLegacy._normalizarTexto(item.codigo_manual);
+    if (codigoManual) return String(item.codigo_manual).trim();
+    const codigoProducto = FacturaLegacy._normalizarTexto(item.codigo_producto);
+    if (codigoProducto) return String(item.codigo_producto).trim();
+    return '-';
+  }
+
+  static _descripcionBateriaFactura(item = {}) {
+    const codigo = FacturaLegacy._codigoBateriaFactura(item);
+    const partes = [
+      item.producto_marca || item.producto_nombre || 'Producto',
+      item.producto_tipo_caja,
+      item.producto_condicion,
+      codigo
+    ].filter(Boolean);
+    return partes.join(' - ');
+  }
+
+  static _descripcionVarioFactura(item = {}) {
+    const base = item.producto_nombre || item.producto_descripcion || item.codigo_producto || 'Producto varios';
+    return FacturaLegacy._textoSinGuiones(base) || 'Producto varios';
+  }
 
   static async _tieneCodigoManualDetalleVentas() {
     if (FacturaLegacy._cacheTieneCodigoManualDetalleVentas !== null) {
@@ -71,6 +131,30 @@ class FacturaLegacy {
       FacturaLegacy._cacheTieneTablaEmpresaConfig = false;
     }
     return FacturaLegacy._cacheTieneTablaEmpresaConfig;
+  }
+
+  static async _tieneColumnaProductos(columna, conexion = pool) {
+    if (!columna) return false;
+    if (FacturaLegacy._cacheColumnasProductos.has(columna)) {
+      return FacturaLegacy._cacheColumnasProductos.get(columna);
+    }
+    try {
+      const [rows] = await conexion.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = ?
+         LIMIT 1`,
+        [columna]
+      );
+      const existe = rows.length > 0;
+      FacturaLegacy._cacheColumnasProductos.set(columna, existe);
+      return existe;
+    } catch {
+      FacturaLegacy._cacheColumnasProductos.set(columna, false);
+      return false;
+    }
   }
 
 
@@ -420,10 +504,36 @@ class FacturaLegacy {
     if (ventas.length === 0) throw new Error('Venta no encontrada');
     const venta = ventas[0];
     const tieneCodigoManual = await FacturaLegacy._tieneCodigoManualDetalleVentas();
+    const [
+      tieneDescripcionProducto,
+      tieneTipoProducto,
+      tieneTipoInventarioProducto,
+      tieneTipoProductoProducto,
+      tieneEsBateriaProducto
+    ] = await Promise.all([
+      FacturaLegacy._tieneColumnaProductos('descripcion'),
+      FacturaLegacy._tieneColumnaProductos('tipo'),
+      FacturaLegacy._tieneColumnaProductos('tipo_inventario'),
+      FacturaLegacy._tieneColumnaProductos('tipo_producto'),
+      FacturaLegacy._tieneColumnaProductos('es_bateria')
+    ]);
     const codigoResueltoExpr = tieneCodigoManual
       ? "COALESCE(NULLIF(TRIM(dv.codigo_manual), ''), p.codigo)"
       : 'p.codigo';
     const codigoManualExpr = tieneCodigoManual ? 'dv.codigo_manual' : 'NULL AS codigo_manual';
+    const descripcionProductoExpr = tieneDescripcionProducto
+      ? 'p.descripcion AS producto_descripcion'
+      : "'' AS producto_descripcion";
+    const tipoExpr = tieneTipoProducto ? 'p.tipo AS tipo' : "'' AS tipo";
+    const tipoInventarioExpr = tieneTipoInventarioProducto
+      ? 'p.tipo_inventario AS tipo_inventario'
+      : "'' AS tipo_inventario";
+    const tipoProductoExpr = tieneTipoProductoProducto
+      ? 'p.tipo_producto AS tipo_producto'
+      : "'' AS tipo_producto";
+    const esBateriaExpr = tieneEsBateriaProducto
+      ? 'p.es_bateria AS es_bateria'
+      : 'NULL AS es_bateria';
 
     const [items] = await pool.query(
       `SELECT
@@ -438,6 +548,14 @@ class FacturaLegacy {
          dv.subtotal,
          dv.total,
          p.nombre AS producto_nombre,
+         ${descripcionProductoExpr},
+         p.marca AS producto_marca,
+         p.tipo_caja AS producto_tipo_caja,
+         p.condicion AS producto_condicion,
+         ${tipoExpr},
+         ${tipoInventarioExpr},
+         ${tipoProductoExpr},
+         ${esBateriaExpr},
          p.codigo AS codigo_producto,
          ${codigoResueltoExpr} AS codigo_resuelto
        FROM detalle_ventas dv
@@ -459,14 +577,19 @@ class FacturaLegacy {
         telefono: venta.cliente_telefono,
         direccion: venta.cliente_direccion
       },
-      items: items.map(item => ({
-        descripcion: item.codigo_resuelto
-          ? `${item.producto_nombre || 'Producto'} - ${item.codigo_resuelto}`
-          : `${item.producto_nombre || item.codigo_producto || 'Producto'}`,
-        cantidad: item.cantidad,
-        precio_unitario: item.precio_unitario,
-        descuento: item.descuento || 0
-      }))
+      items: items.map(item => {
+        const esBateria = FacturaLegacy._esProductoBateria(item);
+        const descripcion = esBateria
+          ? FacturaLegacy._descripcionBateriaFactura(item)
+          : FacturaLegacy._descripcionVarioFactura(item);
+
+        return {
+          descripcion,
+          cantidad: item.cantidad,
+          precio_unitario: item.precio_unitario,
+          descuento: item.descuento || 0
+        };
+      })
     });
 
     if (factura && factura.id) {

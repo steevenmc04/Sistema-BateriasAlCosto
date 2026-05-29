@@ -53,7 +53,11 @@ const esVarioProducto = (producto = {}) => clasificarVario(producto);
 const descripcionBateria = (producto = {}) =>
   [producto.marca, producto.tipo_caja, producto.condicion, producto.codigo].filter(Boolean).join(' - ');
 
-const descripcionVario = (producto = {}) => producto.nombre || producto.descripcion || producto.codigo || '';
+const descripcionVario = (producto = {}) =>
+  String(producto.nombre || producto.descripcion || 'Producto varios')
+    .replace(/\s*-\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 const crearItemFactura = (tipo = 'bateria') => ({
   uid: crearUid(),
@@ -256,16 +260,27 @@ export function useVistaFacturas() {
           telefono: formFactura.cliente_telefono,
           direccion: formFactura.cliente_direccion
         },
-        items: formFactura.items.map((item) => ({
-          descripcion:
-            item.descripcion ||
-            (item.tipo === 'varios'
-              ? (item.producto_nombre || item.codigo || 'Producto Varios')
-              : [item.marca, item.tipo_caja, item.condicion, item.codigo].filter(Boolean).join(' - ') || item.codigo || 'Bateria'),
-          cantidad: Number(item.cantidad) || 1,
-          precio_unitario: Number(item.precio_unitario) || 0,
-          descuento: 0,
-        })),
+        items: formFactura.items.map((item) => {
+          const esVario = item.tipo === 'varios';
+          const codigoBateria = String(item.codigo || '').trim();
+          const descripcion = item.descripcion || (
+            esVario
+              ? String(item.producto_nombre || 'Producto varios')
+                  .replace(/\s*-\s*/g, ' ')
+                  .replace(/\s+/g, ' ')
+                  .trim()
+              : [item.marca, item.tipo_caja, item.condicion, codigoBateria || '-']
+                  .filter(Boolean)
+                  .join(' - ')
+          );
+
+          return {
+            descripcion,
+            cantidad: Number(item.cantidad) || 1,
+            precio_unitario: Number(item.precio_unitario) || 0,
+            descuento: 0,
+          };
+        }),
         con_iva: formFactura.con_iva,
         descuento: 0,
         notas: formFactura.notas,

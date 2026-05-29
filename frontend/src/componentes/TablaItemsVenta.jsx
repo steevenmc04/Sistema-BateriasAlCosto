@@ -28,6 +28,7 @@ const getTipoCaja = (p) => p?.tipo_caja ?? p?.tipoCaja ?? p?.producto_tipo_caja 
 const getCodigo = (p) => p?.codigo ?? p?.producto_codigo ?? '';
 const getStock = (p) => p?.stock ?? p?.stock_actual ?? p?.cantidad_disponible ?? p?.cantidad ?? 0;
 const getPrecio = (p) => p?.precio ?? p?.precio_venta ?? p?.precio_costo ?? 0;
+const getProductoId = (p) => p?.id ?? p?.producto_id ?? null;
 
 function BuscadorInline({ productos, valorInicial, onSelect, onChange, mode }) {
   const [open, setOpen] = useState(false);
@@ -117,64 +118,81 @@ export default function TablaItemsVenta({
   }, [productos, tipoModal]);
   const productosVarios = useMemo(() => (productos || []).filter((p) => esVario(p)), [productos]);
 
-  const getBateriaMatch = (marca, tipoCaja) => {
-    if (!marca || !tipoCaja) return null;
-    const marcaNorm = normalize(marca);
-    const tipoNorm = normalize(tipoCaja);
-    const match = productosBateria.find((p) => {
-      const pMarca = normalize(getMarca(p));
-      const pTipoCaja = normalize(getTipoCaja(p));
-      return pMarca === marcaNorm && pTipoCaja && pTipoCaja === tipoNorm;
-    });
-    return match || null;
-  };
-
   const marcasUnicas = useMemo(() => {
     const marcas = [...new Set(productosBateria.map((p) => getMarca(p)).filter(Boolean))];
     return ['Otro', ...marcas.sort((a, b) => String(a).localeCompare(String(b)))];
   }, [productosBateria]);
 
-  const autocompleteFromInventario = (index, marca, tipoCaja) => {
-    if (!marca || !tipoCaja || marca === 'Otro' || tipoCaja === 'Otro') {
-      onActualizarCampo(index, 'producto_id', null);
-      onActualizarCampo(index, 'precio_unitario', '');
-      onActualizarCampo(index, 'stock_disponible', null);
-      return;
-    }
+  const limpiarSeleccionBateria = (index) => {
+    onActualizarCampo(index, 'producto_id', null);
+    onActualizarCampo(index, 'tipo_caja', '');
+    onActualizarCampo(index, 'stock_disponible', null);
+    onActualizarCampo(index, 'stock', 0);
+    onActualizarCampo(index, 'precio_actual', '');
+    onActualizarCampo(index, 'precio_unitario', '');
+    onActualizarCampo(index, 'codigo', '');
+  };
 
-    const match = getBateriaMatch(marca, tipoCaja);
-    if (!match) {
-      onActualizarCampo(index, 'producto_id', null);
-      onActualizarCampo(index, 'precio_unitario', '');
-      onActualizarCampo(index, 'stock_disponible', null);
-      return;
-    }
+  const aplicarProductoBateria = (index, producto) => {
+    if (!producto) return;
 
-    const precio = Number(getPrecio(match));
-    const stock = Number(getStock(match));
-    onActualizarCampo(index, 'producto_id', match.id ?? match.producto_id ?? null);
-    onActualizarCampo(index, 'precio_unitario', precio);
+    const actual = items[index] || {};
+    const productoId = getProductoId(producto);
+    const precio = safeNumber(getPrecio(producto));
+    const stock = safeNumber(getStock(producto));
+    const codigoProducto = String(getCodigo(producto) || '').trim();
+    const codigoManualActual = String(actual.codigo_manual || '').trim();
+
+    onActualizarCampo(index, 'producto_id', productoId);
+    onActualizarCampo(index, 'marca', getMarca(producto) || actual.marca || '');
+    onActualizarCampo(index, 'customMarca', '');
+    onActualizarCampo(index, 'tipo_caja', getTipoCaja(producto) || '');
+    onActualizarCampo(index, 'customTipoCaja', '');
     onActualizarCampo(index, 'stock_disponible', stock);
+    onActualizarCampo(index, 'stock', stock);
     onActualizarCampo(index, 'precio_actual', String(precio));
+    onActualizarCampo(index, 'precio_unitario', precio);
+    onActualizarCampo(index, 'codigo', codigoProducto);
 
-    const actual = items[index];
-    const codigoActual = actual?.codigo_manual ?? '';
-    if (!codigoActual) {
-      const codigoInventario = getCodigo(match);
-      if (codigoInventario) onActualizarCampo(index, 'codigo_manual', codigoInventario);
+    // Prioridad: respetar código manual si ya fue escrito por el usuario.
+    if (!codigoManualActual && codigoProducto) {
+      onActualizarCampo(index, 'codigo_manual', codigoProducto);
     }
   };
 
   const renderFilaBateria = (item, index) => {
     const isMarcaOtro = item.marca === 'Otro';
-    const tiposCajaUnicos = (() => {
-      if (isMarcaOtro) return ['Otro'];
-      const filtrados = item.marca
-        ? productosBateria.filter((p) => normalize(getMarca(p)) === normalize(item.marca) && getTipoCaja(p))
-        : productosBateria.filter((p) => getTipoCaja(p));
-      const tipos = [...new Set(filtrados.map((p) => getTipoCaja(p)).filter(Boolean))];
-      return ['Otro', ...tipos.sort()];
+    const productosMarca = (() => {
+      if (isMarcaOtro || !item.marca) return [];
+      return productosBateria
+        .filter((p) => normalize(getMarca(p)) === normalize(item.marca) && getTipoCaja(p))
+        .filter((p) => getProductoId(p) !== null && getProductoId(p) !== undefined);
     })();
+    const tiposCajaOpciones = (() => {
+      if (isMarcaOtro) return [{ value: 'Otro', label: 'Otro' }];
+      const porId = new Map();
+      for (const p of productosMarca) {
+        const id = String(getProductoId(p));
+        if (porId.has(id)) continue;
+        const stock = safeNumber(getStock(p));
+        const precio = safeNumber(getPrecio(p));
+        const tipoCaja = String(getTipoCaja(p) || 'Sin caja');
+        const codigo = String(getCodigo(p) || 'Sin código');
+        porId.set(id, {
+          value: id,
+          label: `${tipoCaja} · ${codigo} · Stock: ${stock} · $${precio.toFixed(2)}`,
+          producto: p,
+        });
+      }
+      return [
+        { value: '', label: 'Seleccione un tipo de caja' },
+        ...Array.from(porId.values()),
+        { value: 'Otro', label: 'Otro' },
+      ];
+    })();
+    const selectedTipoCajaValue = item.tipo_caja === 'Otro'
+      ? 'Otro'
+      : (item.producto_id ? String(item.producto_id) : '');
     const isCajaOtro = item.tipo_caja === 'Otro';
     const rawStock = item.stock_disponible ?? item.stock ?? item.stock_actual ?? item.cantidad_disponible;
     const stockVal = rawStock === null || rawStock === undefined || rawStock === ''
@@ -205,10 +223,7 @@ export default function TablaItemsVenta({
                   const val = e.target.value;
                   onActualizarCampo(index, 'marca', val);
                   onActualizarCampo(index, 'customMarca', '');
-                  onActualizarCampo(index, 'tipo_caja', '');
-                  onActualizarCampo(index, 'stock_disponible', null);
-                  onActualizarCampo(index, 'precio_actual', '');
-                  onActualizarCampo(index, 'precio_unitario', '');
+                  limpiarSeleccionBateria(index);
                 }}
                 placeholder="Seleccione una marca"
                 className="w-full"
@@ -227,13 +242,37 @@ export default function TablaItemsVenta({
               />
             ) : (
               <SelectPremium
-                options={[{ value: '', label: 'Seleccione un tipo de caja' }, ...tiposCajaUnicos.map((t) => ({ value: String(t), label: String(t) }))]}
-                value={item.tipo_caja || ''}
+                options={tiposCajaOpciones}
+                value={selectedTipoCajaValue}
                 onChange={(e) => {
                   const val = e.target.value;
-                  onActualizarCampo(index, 'tipo_caja', val);
-                  onActualizarCampo(index, 'customTipoCaja', '');
-                  autocompleteFromInventario(index, item.marca, val);
+                  if (val === 'Otro') {
+                    onActualizarCampo(index, 'producto_id', null);
+                    onActualizarCampo(index, 'tipo_caja', 'Otro');
+                    onActualizarCampo(index, 'customTipoCaja', '');
+                    onActualizarCampo(index, 'stock_disponible', null);
+                    onActualizarCampo(index, 'stock', 0);
+                    onActualizarCampo(index, 'precio_actual', '');
+                    onActualizarCampo(index, 'precio_unitario', '');
+                    onActualizarCampo(index, 'codigo', '');
+                    return;
+                  }
+
+                  if (!val) {
+                    limpiarSeleccionBateria(index);
+                    return;
+                  }
+
+                  const match = productosMarca.find((p) => String(getProductoId(p)) === String(val));
+                  if (match) {
+                    aplicarProductoBateria(index, match);
+                  }
+                }}
+                onSelect={(option) => {
+                  if (option?.value === 'Otro') return;
+                  if (option?.producto) {
+                    aplicarProductoBateria(index, option.producto);
+                  }
                 }}
                 placeholder="Seleccione un tipo de caja"
                 className="w-full"
