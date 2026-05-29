@@ -142,6 +142,12 @@ const formatearFecha = (f) => {
 };
 
 const obtenerCodigoManual = (r = {}) => {
+  if (r.codigo_manual && String(r.codigo_manual).trim()) {
+    return String(r.codigo_manual).trim();
+  }
+  if (r.codigo_resuelto && String(r.codigo_resuelto).trim()) {
+    return String(r.codigo_resuelto).trim();
+  }
   if (r.notas) {
     const match = String(r.notas).match(/Ref\.\sfísica\/SRI:\s*([^|]+)/i);
     if (match && match[1]) return match[1].trim();

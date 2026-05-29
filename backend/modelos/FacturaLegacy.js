@@ -10,6 +10,28 @@ import pool from '../configuracion/baseDeDatos.js';
  * @tabla facturas, factura_detalles, empresa_config
  */
 class FacturaLegacy {
+  static _cacheTieneCodigoManualDetalleVentas = null;
+
+  static async _tieneCodigoManualDetalleVentas() {
+    if (FacturaLegacy._cacheTieneCodigoManualDetalleVentas !== null) {
+      return FacturaLegacy._cacheTieneCodigoManualDetalleVentas;
+    }
+    try {
+      const [rows] = await pool.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'detalle_ventas'
+           AND COLUMN_NAME = 'codigo_manual'
+         LIMIT 1`
+      );
+      FacturaLegacy._cacheTieneCodigoManualDetalleVentas = rows.length > 0;
+    } catch {
+      FacturaLegacy._cacheTieneCodigoManualDetalleVentas = false;
+    }
+    return FacturaLegacy._cacheTieneCodigoManualDetalleVentas;
+  }
+
 
   /**
    * @metodo generarNumero
@@ -315,9 +337,27 @@ class FacturaLegacy {
     );
     if (ventas.length === 0) throw new Error('Venta no encontrada');
     const venta = ventas[0];
+    const tieneCodigoManual = await FacturaLegacy._tieneCodigoManualDetalleVentas();
+    const codigoResueltoExpr = tieneCodigoManual
+      ? "COALESCE(NULLIF(TRIM(dv.codigo_manual), ''), p.codigo)"
+      : 'p.codigo';
+    const codigoManualExpr = tieneCodigoManual ? 'dv.codigo_manual' : 'NULL AS codigo_manual';
 
     const [items] = await pool.query(
-      `SELECT dv.*, p.nombre AS producto_nombre, p.codigo
+      `SELECT
+         dv.id,
+         dv.venta_id,
+         dv.producto_id,
+         ${codigoManualExpr},
+         dv.cantidad,
+         dv.precio_unitario,
+         dv.descuento,
+         dv.iva_porcentaje,
+         dv.subtotal,
+         dv.total,
+         p.nombre AS producto_nombre,
+         p.codigo AS codigo_producto,
+         ${codigoResueltoExpr} AS codigo_resuelto
        FROM detalle_ventas dv
        LEFT JOIN productos p ON dv.producto_id = p.id
        WHERE dv.venta_id = ?`,
@@ -338,7 +378,9 @@ class FacturaLegacy {
         direccion: venta.cliente_direccion
       },
       items: items.map(item => ({
-        descripcion: `${item.producto_nombre || item.codigo || 'Producto'}`,
+        descripcion: item.codigo_resuelto
+          ? `${item.producto_nombre || 'Producto'} - ${item.codigo_resuelto}`
+          : `${item.producto_nombre || item.codigo_producto || 'Producto'}`,
         cantidad: item.cantidad,
         precio_unitario: item.precio_unitario,
         descuento: item.descuento || 0

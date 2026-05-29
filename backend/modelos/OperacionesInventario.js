@@ -14,6 +14,28 @@ const IVA_RATIO = 0.15;
  * Operaciones sobre inventario_* y registros financieros (transacciones en BD).
  */
 class OperacionesInventario {
+  static _cacheTieneCodigoManualDetalleVentas = null;
+
+  static async _tieneCodigoManualDetalleVentas() {
+    if (OperacionesInventario._cacheTieneCodigoManualDetalleVentas !== null) {
+      return OperacionesInventario._cacheTieneCodigoManualDetalleVentas;
+    }
+    try {
+      const [rows] = await pool.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'detalle_ventas'
+           AND COLUMN_NAME = 'codigo_manual'
+         LIMIT 1`
+      );
+      OperacionesInventario._cacheTieneCodigoManualDetalleVentas = rows.length > 0;
+    } catch {
+      OperacionesInventario._cacheTieneCodigoManualDetalleVentas = false;
+    }
+    return OperacionesInventario._cacheTieneCodigoManualDetalleVentas;
+  }
+
   static _montosCantidadPrecio(q, pu, incluyeIva) {
     const bruto = Number(q) * Number(pu);
     if (incluyeIva) {
@@ -481,69 +503,152 @@ class OperacionesInventario {
 
   /** Historial ventas_inventario */
   static async listarVentasInventario({ desde, hasta, usuarioFiltradoId }) {
-    let sql = `SELECT v.*, u.nombre AS usuario_nombre,
-        ROUND(
-          COALESCE(
-            (SELECT AVG(c.precio_unitario) FROM compras_inventario c
-             WHERE (v.marca IS NOT NULL
-               AND c.marca = v.marca AND c.tipo_caja = v.tipo_caja AND c.condicion = v.condicion)
-               OR (v.marca IS NULL
-               AND c.marca = v.condicion AND c.tipo_caja = '-')
-            ), 0
-          ), 2
-        ) AS costo_unitario
-      FROM ventas_inventario v
-      JOIN usuarios u ON u.id = v.usuario_id WHERE 1=1`;
+    const tieneCodigoManual = await OperacionesInventario._tieneCodigoManualDetalleVentas();
+    const codigoManualSelect = tieneCodigoManual ? 'dv.codigo_manual' : 'NULL AS codigo_manual';
+    const codigoPreferidoSelect = tieneCodigoManual
+      ? "COALESCE(NULLIF(TRIM(dv.codigo_manual), ''), p.codigo)"
+      : 'p.codigo';
+
+    let sql = `
+      SELECT
+        dv.id,
+        v.id AS venta_id,
+        v.creado_en AS fecha,
+        COALESCE(
+          p.tipo,
+          CASE
+            WHEN COALESCE(NULLIF(TRIM(p.tipo_caja), ''), '-') <> '-' THEN 'bateria'
+            ELSE 'varios'
+          END
+        ) AS tipo,
+        ${codigoPreferidoSelect} AS codigo_item,
+        ${codigoManualSelect},
+        p.codigo AS codigo_producto,
+        p.marca,
+        p.tipo_caja,
+        p.condicion,
+        COALESCE(cat.nombre, '') AS categoria,
+        dv.cantidad,
+        dv.precio_unitario,
+        CASE WHEN COALESCE(dv.iva_porcentaje, v.iva_porcentaje, 0) > 0 THEN 1 ELSE 0 END AS con_iva,
+        dv.subtotal,
+        ROUND(COALESCE(dv.total, dv.subtotal, 0) - COALESCE(dv.subtotal, 0), 2) AS monto_iva,
+        COALESCE(dv.total, dv.subtotal, 0) AS total,
+        COALESCE(c.nombre, 'CONSUMIDOR FINAL') AS nombre_cliente,
+        v.usuario_id,
+        u.nombre AS usuario_nombre,
+        COALESCE(p.precio_costo, 0) AS costo_unitario,
+        v.notas
+      FROM ventas v
+      INNER JOIN detalle_ventas dv ON dv.venta_id = v.id
+      LEFT JOIN productos p ON p.id = dv.producto_id
+      LEFT JOIN categorias cat ON cat.id = p.categoria_id
+      LEFT JOIN clientes c ON c.id = v.cliente_id
+      LEFT JOIN usuarios u ON u.id = v.usuario_id
+      WHERE v.estado <> 'anulada'
+    `;
     const p = [];
     if (desde) {
-      sql += ' AND v.fecha >= ?';
-      p.push(desde);
+      sql += ' AND v.creado_en >= ?';
+      p.push(`${String(desde).split(' ')[0]} 00:00:00`);
     }
     if (hasta) {
-      sql += ' AND v.fecha <= ?';
-      p.push(hasta.endsWith?.('23:59:59') ? hasta : `${hasta.split(' ')[0]} 23:59:59`);
+      sql += ' AND v.creado_en <= ?';
+      p.push(hasta.endsWith?.('23:59:59') ? hasta : `${String(hasta).split(' ')[0]} 23:59:59`);
     }
     if (usuarioFiltradoId) {
       sql += ' AND v.usuario_id = ?';
       p.push(usuarioFiltradoId);
     }
-    sql += ' ORDER BY v.fecha DESC, v.id DESC';
+    sql += ' ORDER BY v.creado_en DESC, dv.id DESC';
     const [filas] = await pool.query(sql, p);
     return filas;
   }
 
   static async listarComprasInv({ desde, hasta }) {
-    let sql =
-      `SELECT c.*, u.nombre AS usuario_nombre FROM compras_inventario c
-       JOIN usuarios u ON u.id = c.usuario_id WHERE 1=1`;
+    let sql = `
+      SELECT
+        dc.id,
+        c.id AS compra_id,
+        c.creado_en AS fecha,
+        COALESCE(
+          p.tipo,
+          CASE
+            WHEN COALESCE(NULLIF(TRIM(p.tipo_caja), ''), '-') <> '-' THEN 'bateria'
+            ELSE 'varios'
+          END
+        ) AS tipo,
+        p.codigo AS codigo_item,
+        p.marca,
+        p.tipo_caja,
+        COALESCE(dc.condicion, p.condicion) AS condicion,
+        COALESCE(cat.nombre, '') AS categoria,
+        dc.cantidad,
+        COALESCE(dc.precio_unitario, dc.costo_unitario, 0) AS precio_unitario,
+        COALESCE(dc.subtotal, dc.total, 0) AS subtotal,
+        COALESCE(dc.total, dc.subtotal, 0) AS total,
+        c.numero_factura AS proveedor,
+        c.usuario_id,
+        u.nombre AS usuario_nombre,
+        c.notas
+      FROM compras c
+      INNER JOIN detalle_compras dc ON dc.compra_id = c.id
+      LEFT JOIN productos p ON p.id = dc.producto_id
+      LEFT JOIN categorias cat ON cat.id = p.categoria_id
+      LEFT JOIN usuarios u ON u.id = c.usuario_id
+      WHERE c.estado <> 'anulada'
+    `;
     const p = [];
     if (desde) {
-      sql += ' AND c.fecha >= ?';
-      p.push(desde);
+      sql += ' AND c.creado_en >= ?';
+      p.push(`${String(desde).split(' ')[0]} 00:00:00`);
     }
     if (hasta) {
-      sql += ' AND c.fecha <= ?';
-      p.push(hasta.endsWith?.('23:59:59') ? hasta : `${hasta.split(' ')[0]} 23:59:59`);
+      sql += ' AND c.creado_en <= ?';
+      p.push(hasta.endsWith?.('23:59:59') ? hasta : `${String(hasta).split(' ')[0]} 23:59:59`);
     }
-    sql += ' ORDER BY c.fecha DESC';
+    sql += ' ORDER BY c.creado_en DESC, dc.id DESC';
     const [filas] = await pool.query(sql, p);
     return filas;
   }
 
   static async listarChatarraInv({ desde, hasta }) {
-    let sql =
-      `SELECT c.*, u.nombre AS usuario_nombre FROM chatarra_inventario c
-       JOIN usuarios u ON u.id = c.usuario_id WHERE 1=1`;
+    let sql = `
+      SELECT
+        cd.id,
+        c.id AS chatarra_id,
+        c.creado_en AS fecha,
+        c.tipo_operacion,
+        'chatarra' AS tipo,
+        p.codigo AS codigo_item,
+        p.marca,
+        p.tipo_caja,
+        COALESCE(p.condicion, 'Chatarra') AS condicion,
+        'Chatarra' AS categoria,
+        cd.cantidad,
+        cd.precio_unitario,
+        cd.subtotal,
+        cd.subtotal AS total,
+        COALESCE(c.notas, cd.notas, '') AS notas,
+        '-' AS nombre_cliente_proveedor,
+        c.usuario_id,
+        u.nombre AS usuario_nombre
+      FROM chatarra_operaciones c
+      INNER JOIN chatarra_detalles cd ON cd.chatarra_id = c.id
+      LEFT JOIN productos p ON p.id = cd.producto_id
+      LEFT JOIN usuarios u ON u.id = c.usuario_id
+      WHERE c.estado <> 'anulada'
+    `;
     const p = [];
     if (desde) {
-      sql += ' AND c.fecha >= ?';
-      p.push(desde);
+      sql += ' AND c.creado_en >= ?';
+      p.push(`${String(desde).split(' ')[0]} 00:00:00`);
     }
     if (hasta) {
-      sql += ' AND c.fecha <= ?';
-      p.push(hasta.endsWith?.('23:59:59') ? hasta : `${hasta.split(' ')[0]} 23:59:59`);
+      sql += ' AND c.creado_en <= ?';
+      p.push(hasta.endsWith?.('23:59:59') ? hasta : `${String(hasta).split(' ')[0]} 23:59:59`);
     }
-    sql += ' ORDER BY c.fecha DESC';
+    sql += ' ORDER BY c.creado_en DESC, cd.id DESC';
     const [filas] = await pool.query(sql, p);
     return filas;
   }

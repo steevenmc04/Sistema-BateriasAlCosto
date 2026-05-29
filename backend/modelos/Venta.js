@@ -15,6 +15,27 @@ import Caja from './Caja.js';
  * Controla la transacción atómica de ventas, rebaja de stock en Kardex, e ingresos en Caja.
  */
 class Venta {
+  static _cacheTieneCodigoManualDetalle = null;
+
+  static async _tieneColumnaCodigoManualDetalle(conexion = pool) {
+    if (Venta._cacheTieneCodigoManualDetalle !== null) {
+      return Venta._cacheTieneCodigoManualDetalle;
+    }
+    try {
+      const [rows] = await conexion.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'detalle_ventas'
+           AND COLUMN_NAME = 'codigo_manual'
+         LIMIT 1`
+      );
+      Venta._cacheTieneCodigoManualDetalle = rows.length > 0;
+    } catch {
+      Venta._cacheTieneCodigoManualDetalle = false;
+    }
+    return Venta._cacheTieneCodigoManualDetalle;
+  }
   /**
    * Registra una venta completa con sus detalles, rebajando stock en el Kardex 
    * y sumando los ingresos correspondientes a la sesión de caja activa de manera transaccional.
@@ -62,6 +83,7 @@ class Venta {
         [cliente_id, usuario_id, sesion_caja_id, numero_factura, subtotal, descuento, base_imponible, monto_iva, total, iva_porcentaje, metodo_pago, notas]
       );
       const ventaId = resultadoVenta.insertId;
+      const tieneCodigoManual = await Venta._tieneColumnaCodigoManualDetalle(conexion);
 
       // 3. Registrar los artículos (detalles) y rebajar stock
       for (const art of articulos) {
@@ -91,11 +113,33 @@ class Venta {
 
         // 3.1. Insertar el detalle
         Logger.debug('Venta', 'INSERT detalle_ventas', { ventaId, producto_id: art.producto_id, cantidad: art.cantidad });
-        await conexion.query(
-          `INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario, descuento, iva_porcentaje, subtotal, total)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [ventaId, art.producto_id, art.cantidad, art.precio_unitario, art.descuento || 0.00, iva_porcentaje, artSubtotal, artTotal]
-        );
+        const codigoManual = typeof art.codigo_manual === 'string' && art.codigo_manual.trim() !== ''
+          ? art.codigo_manual.trim()
+          : null;
+        if (tieneCodigoManual) {
+          await conexion.query(
+            `INSERT INTO detalle_ventas (
+              venta_id, producto_id, codigo_manual, cantidad, precio_unitario, descuento, iva_porcentaje, subtotal, total
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              ventaId,
+              art.producto_id,
+              codigoManual,
+              art.cantidad,
+              art.precio_unitario,
+              art.descuento || 0.00,
+              iva_porcentaje,
+              artSubtotal,
+              artTotal
+            ]
+          );
+        } else {
+          await conexion.query(
+            `INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, precio_unitario, descuento, iva_porcentaje, subtotal, total)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [ventaId, art.producto_id, art.cantidad, art.precio_unitario, art.descuento || 0.00, iva_porcentaje, artSubtotal, artTotal]
+          );
+        }
 
         // 3.2. Registrar salida en Kardex (MovimientoInventario se encarga de actualizar inventario_stock)
         Logger.debug('Venta', 'REGISTRANDO MOVIMIENTO INVENTARIO (SALIDA)', { producto_id: art.producto_id, cantidad: art.cantidad });
@@ -270,23 +314,53 @@ class Venta {
         ]
       );
       const ventaId = resultadoVenta.insertId;
+      const tieneCodigoManual = await Venta._tieneColumnaCodigoManualDetalle(conexion);
 
       // ======= PROCESAR CADA ARTÍCULO =======
       for (const art of articulos) {
         const artSubtotal = (art.cantidad * art.precio_unitario) - (art.descuento || 0);
         const artTotal = Math.round(artSubtotal * (1 + iva_porcentaje / 100) * 100) / 100;
+        const codigoManual = typeof art.codigo_manual === 'string' && art.codigo_manual.trim() !== ''
+          ? art.codigo_manual.trim()
+          : null;
 
         // 1. Insertar detalle de venta
-        await conexion.query(
-          `INSERT INTO detalle_ventas (
-            venta_id, producto_id, cantidad, precio_unitario, 
-            descuento, iva_porcentaje, subtotal, total
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            ventaId, art.producto_id, art.cantidad, art.precio_unitario,
-            art.descuento || 0, iva_porcentaje, artSubtotal, artTotal
-          ]
-        );
+        if (tieneCodigoManual) {
+          await conexion.query(
+            `INSERT INTO detalle_ventas (
+              venta_id, producto_id, codigo_manual, cantidad, precio_unitario,
+              descuento, iva_porcentaje, subtotal, total
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              ventaId,
+              art.producto_id,
+              codigoManual,
+              art.cantidad,
+              art.precio_unitario,
+              art.descuento || 0,
+              iva_porcentaje,
+              artSubtotal,
+              artTotal
+            ]
+          );
+        } else {
+          await conexion.query(
+            `INSERT INTO detalle_ventas (
+              venta_id, producto_id, cantidad, precio_unitario,
+              descuento, iva_porcentaje, subtotal, total
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              ventaId,
+              art.producto_id,
+              art.cantidad,
+              art.precio_unitario,
+              art.descuento || 0,
+              iva_porcentaje,
+              artSubtotal,
+              artTotal
+            ]
+          );
+        }
 
         // 2. Obtener precio de costo del producto
         const [prodFilas] = await conexion.query(
@@ -362,8 +436,12 @@ class Venta {
 
     const venta = cabeceraFilas[0] || null;
     if (venta) {
+      const tieneCodigoManual = await Venta._tieneColumnaCodigoManualDetalle();
+      const codigoManualSelect = tieneCodigoManual
+        ? 'dv.codigo_manual AS codigo_manual,'
+        : 'NULL AS codigo_manual,';
       const [detalleFilas] = await pool.query(
-        `SELECT dv.id, dv.producto_id, p.nombre AS producto_nombre, p.codigo AS producto_codigo,
+        `SELECT dv.id, dv.producto_id, ${codigoManualSelect} p.nombre AS producto_nombre, p.codigo AS producto_codigo,
                 p.marca AS producto_marca, p.modelo AS producto_modelo,
                 dv.cantidad, dv.precio_unitario, dv.descuento, dv.iva_porcentaje, 
                 dv.subtotal, dv.total
@@ -389,13 +467,17 @@ class Venta {
     limite = 100,
     desplazamiento = 0
   } = {}) {
+    const tieneCodigoManual = await Venta._tieneColumnaCodigoManualDetalle();
+    const codigoManualSelect = tieneCodigoManual
+      ? 'first_dv.codigo_manual AS codigo_manual,'
+      : 'NULL AS codigo_manual,';
     let sql = `
       SELECT v.id, v.cliente_id, c.nombre AS cliente_nombre, c.documento AS cliente_documento,
              c.email AS cliente_email, c.telefono AS cliente_telefono, c.direccion AS cliente_direccion,
              v.usuario_id, u.nombre AS usuario_nombre, v.numero_factura, 
              v.subtotal, v.descuento, v.base_imponible, v.monto_iva, v.total, v.metodo_pago, v.estado,
              v.notas, v.creado_en,
-             first_dv.cantidad, first_dv.precio_unitario,
+             ${codigoManualSelect} first_dv.cantidad, first_dv.precio_unitario,
              first_p.nombre AS producto_nombre, first_p.codigo AS producto_codigo, 
              first_p.marca AS producto_marca,
              first_p.tipo_caja AS producto_tipo_caja, first_p.condicion AS producto_condicion,

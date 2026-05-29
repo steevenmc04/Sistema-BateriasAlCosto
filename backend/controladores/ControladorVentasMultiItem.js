@@ -187,6 +187,9 @@ class ControladorVentasMultiItem {
             precio_unitario: Number(art.precio_unitario),
             descuento: Number(art.descuento || 0)
           };
+          if (typeof art.codigo_manual === 'string' && art.codigo_manual.trim() !== '') {
+            item.codigo_manual = art.codigo_manual.trim();
+          }
           if (art.marca_custom) item.marca_custom = art.marca_custom;
           if (art.tipo_caja_custom) item.tipo_caja_custom = art.tipo_caja_custom;
           return item;
