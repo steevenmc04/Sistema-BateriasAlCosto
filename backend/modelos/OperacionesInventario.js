@@ -15,6 +15,8 @@ const IVA_RATIO = 0.15;
  */
 class OperacionesInventario {
   static _cacheTieneCodigoManualDetalleVentas = null;
+  static _cacheTieneColumnaTipoProductos = null;
+  static _cacheTieneColumnaTipoInventarioProductos = null;
 
   static async _tieneCodigoManualDetalleVentas() {
     if (OperacionesInventario._cacheTieneCodigoManualDetalleVentas !== null) {
@@ -34,6 +36,64 @@ class OperacionesInventario {
       OperacionesInventario._cacheTieneCodigoManualDetalleVentas = false;
     }
     return OperacionesInventario._cacheTieneCodigoManualDetalleVentas;
+  }
+
+  static async _tieneColumnaTipoProductos() {
+    if (OperacionesInventario._cacheTieneColumnaTipoProductos !== null) {
+      return OperacionesInventario._cacheTieneColumnaTipoProductos;
+    }
+    try {
+      const [rows] = await pool.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tipo'
+         LIMIT 1`
+      );
+      OperacionesInventario._cacheTieneColumnaTipoProductos = rows.length > 0;
+    } catch {
+      OperacionesInventario._cacheTieneColumnaTipoProductos = false;
+    }
+    return OperacionesInventario._cacheTieneColumnaTipoProductos;
+  }
+
+  static async _tieneColumnaTipoInventarioProductos() {
+    if (OperacionesInventario._cacheTieneColumnaTipoInventarioProductos !== null) {
+      return OperacionesInventario._cacheTieneColumnaTipoInventarioProductos;
+    }
+    try {
+      const [rows] = await pool.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tipo_inventario'
+         LIMIT 1`
+      );
+      OperacionesInventario._cacheTieneColumnaTipoInventarioProductos = rows.length > 0;
+    } catch {
+      OperacionesInventario._cacheTieneColumnaTipoInventarioProductos = false;
+    }
+    return OperacionesInventario._cacheTieneColumnaTipoInventarioProductos;
+  }
+
+  static async _exprTipoProducto(alias = 'p') {
+    const fallback = `
+      CASE
+        WHEN COALESCE(NULLIF(TRIM(${alias}.tipo_caja), ''), '-') <> '-' THEN 'bateria'
+        ELSE 'varios'
+      END
+    `;
+    const tieneTipo = await OperacionesInventario._tieneColumnaTipoProductos();
+    if (tieneTipo) {
+      return `COALESCE(${alias}.tipo, ${fallback})`;
+    }
+    const tieneTipoInventario = await OperacionesInventario._tieneColumnaTipoInventarioProductos();
+    if (tieneTipoInventario) {
+      return `COALESCE(${alias}.tipo_inventario, ${fallback})`;
+    }
+    return fallback;
   }
 
   static _montosCantidadPrecio(q, pu, incluyeIva) {
@@ -504,6 +564,7 @@ class OperacionesInventario {
   /** Historial ventas_inventario */
   static async listarVentasInventario({ desde, hasta, usuarioFiltradoId }) {
     const tieneCodigoManual = await OperacionesInventario._tieneCodigoManualDetalleVentas();
+    const tipoProductoExpr = await OperacionesInventario._exprTipoProducto('p');
     const codigoManualSelect = tieneCodigoManual ? 'dv.codigo_manual' : 'NULL AS codigo_manual';
     const codigoPreferidoSelect = tieneCodigoManual
       ? "COALESCE(NULLIF(TRIM(dv.codigo_manual), ''), p.codigo)"
@@ -514,13 +575,7 @@ class OperacionesInventario {
         dv.id,
         v.id AS venta_id,
         v.creado_en AS fecha,
-        COALESCE(
-          p.tipo,
-          CASE
-            WHEN COALESCE(NULLIF(TRIM(p.tipo_caja), ''), '-') <> '-' THEN 'bateria'
-            ELSE 'varios'
-          END
-        ) AS tipo,
+        ${tipoProductoExpr} AS tipo,
         ${codigoPreferidoSelect} AS codigo_item,
         ${codigoManualSelect},
         p.codigo AS codigo_producto,
@@ -566,18 +621,13 @@ class OperacionesInventario {
   }
 
   static async listarComprasInv({ desde, hasta }) {
+    const tipoProductoExpr = await OperacionesInventario._exprTipoProducto('p');
     let sql = `
       SELECT
         dc.id,
         c.id AS compra_id,
         c.creado_en AS fecha,
-        COALESCE(
-          p.tipo,
-          CASE
-            WHEN COALESCE(NULLIF(TRIM(p.tipo_caja), ''), '-') <> '-' THEN 'bateria'
-            ELSE 'varios'
-          END
-        ) AS tipo,
+        ${tipoProductoExpr} AS tipo,
         p.codigo AS codigo_item,
         p.marca,
         p.tipo_caja,

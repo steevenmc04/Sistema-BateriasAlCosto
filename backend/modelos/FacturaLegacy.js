@@ -11,6 +11,8 @@ import pool from '../configuracion/baseDeDatos.js';
  */
 class FacturaLegacy {
   static _cacheTieneCodigoManualDetalleVentas = null;
+  static _cacheTieneColumnaVentaPosIdFacturas = null;
+  static _cacheTieneTablaEmpresaConfig = null;
 
   static async _tieneCodigoManualDetalleVentas() {
     if (FacturaLegacy._cacheTieneCodigoManualDetalleVentas !== null) {
@@ -30,6 +32,45 @@ class FacturaLegacy {
       FacturaLegacy._cacheTieneCodigoManualDetalleVentas = false;
     }
     return FacturaLegacy._cacheTieneCodigoManualDetalleVentas;
+  }
+
+  static async _tieneColumnaVentaPosIdFacturas(conexion = pool) {
+    if (FacturaLegacy._cacheTieneColumnaVentaPosIdFacturas !== null) {
+      return FacturaLegacy._cacheTieneColumnaVentaPosIdFacturas;
+    }
+    try {
+      const [rows] = await conexion.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'facturas'
+           AND COLUMN_NAME = 'venta_pos_id'
+         LIMIT 1`
+      );
+      FacturaLegacy._cacheTieneColumnaVentaPosIdFacturas = rows.length > 0;
+    } catch {
+      FacturaLegacy._cacheTieneColumnaVentaPosIdFacturas = false;
+    }
+    return FacturaLegacy._cacheTieneColumnaVentaPosIdFacturas;
+  }
+
+  static async _tieneTablaEmpresaConfig(conexion = pool) {
+    if (FacturaLegacy._cacheTieneTablaEmpresaConfig !== null) {
+      return FacturaLegacy._cacheTieneTablaEmpresaConfig;
+    }
+    try {
+      const [rows] = await conexion.query(
+        `SELECT 1
+         FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'empresa_config'
+         LIMIT 1`
+      );
+      FacturaLegacy._cacheTieneTablaEmpresaConfig = rows.length > 0;
+    } catch {
+      FacturaLegacy._cacheTieneTablaEmpresaConfig = false;
+    }
+    return FacturaLegacy._cacheTieneTablaEmpresaConfig;
   }
 
 
@@ -84,26 +125,26 @@ class FacturaLegacy {
     try {
       await conn.beginTransaction();
 
-      // 1. Obtener config de empresa con bloqueo FOR UPDATE para concurrencia
-      const [cfg] = await conn.query(
-        'SELECT * FROM empresa_config LIMIT 1 FOR UPDATE'
-      );
-      const config = cfg[0];
-      if (!config) {
-        throw new Error(
-          'No hay configuración de empresa. Ve a Configuración → Empresa y guarda los datos.'
+      // 1. Obtener config de empresa (si existe) con bloqueo FOR UPDATE para concurrencia
+      const tieneEmpresaConfig = await FacturaLegacy._tieneTablaEmpresaConfig(conn);
+      let config = null;
+      if (tieneEmpresaConfig) {
+        const [cfg] = await conn.query(
+          'SELECT * FROM empresa_config LIMIT 1 FOR UPDATE'
         );
+        config = cfg[0] || null;
       }
 
-      // 2. Generar número de factura
-      const numero_factura = `${config.prefijo_factura}-` +
-        String(config.secuencial_factura).padStart(4, '0');
+      // 2. Generar número de factura (fallback si no existe empresa_config)
+      const prefijoFactura = config?.prefijo_factura || 'FAC';
+      const secuencialFactura = Number(config?.secuencial_factura || (Date.now() % 100000));
+      const numero_factura = `${prefijoFactura}-${String(secuencialFactura).padStart(4, '0')}`;
 
       // 3. Calcular totales
       const cliente   = datos.cliente || {};
       const items     = datos.items   || [];
       const con_iva   = Boolean(datos.con_iva);
-      const ivaPct    = Number(config.iva_porcentaje || 15);
+      const ivaPct    = Number(config?.iva_porcentaje || 15);
       const descGlobal = Number(datos.descuento || 0);
 
       let subtotal = 0;
@@ -119,35 +160,65 @@ class FacturaLegacy {
         : 0;
       const total = baseImponible + montoIva;
 
-      // 4. INSERT en facturas
-      const [result] = await conn.query(
-        `INSERT INTO facturas (
-          numero_factura, venta_id, venta_pos_id, usuario_id,
-          cliente_nombre, cliente_documento,
-          cliente_email, cliente_telefono, cliente_direccion,
-          subtotal, descuento, base_imponible,
-          monto_iva, total, iva_porcentaje,
-          estado, notas
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'emitida', ?)`,
-        [
-          numero_factura,
-          null,
-          datos.venta_pos_id || datos.venta_id || null,
-          datos.usuario_id,
-          cliente.nombre      || 'CONSUMIDOR FINAL',
-          cliente.cedula_ruc  || '9999999999999',
-          cliente.email       || null,
-          cliente.telefono    || null,
-          cliente.direccion   || null,
-          subtotal,
-          descGlobal,
-          baseImponible,
-          montoIva,
-          total,
-          ivaPct,
-          datos.notas || null
-        ]
-      );
+      // 4. INSERT en facturas (compatibilidad con esquemas con/sin venta_pos_id)
+      const tieneVentaPosId = await FacturaLegacy._tieneColumnaVentaPosIdFacturas(conn);
+      const ventaRelacionada = datos.venta_pos_id || datos.venta_id || null;
+      const [result] = tieneVentaPosId
+        ? await conn.query(
+            `INSERT INTO facturas (
+              numero_factura, venta_id, venta_pos_id, usuario_id,
+              cliente_nombre, cliente_documento,
+              cliente_email, cliente_telefono, cliente_direccion,
+              subtotal, descuento, base_imponible,
+              monto_iva, total, iva_porcentaje,
+              estado, notas
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'emitida', ?)`,
+            [
+              numero_factura,
+              ventaRelacionada,
+              ventaRelacionada,
+              datos.usuario_id,
+              cliente.nombre      || 'CONSUMIDOR FINAL',
+              cliente.cedula_ruc  || '9999999999999',
+              cliente.email       || null,
+              cliente.telefono    || null,
+              cliente.direccion   || null,
+              subtotal,
+              descGlobal,
+              baseImponible,
+              montoIva,
+              total,
+              ivaPct,
+              datos.notas || null
+            ]
+          )
+        : await conn.query(
+            `INSERT INTO facturas (
+              numero_factura, venta_id, usuario_id,
+              cliente_nombre, cliente_documento,
+              cliente_email, cliente_telefono, cliente_direccion,
+              subtotal, descuento, base_imponible,
+              monto_iva, total, iva_porcentaje,
+              estado, notas
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'emitida', ?)`,
+            [
+              numero_factura,
+              ventaRelacionada,
+              datos.usuario_id,
+              cliente.nombre      || 'CONSUMIDOR FINAL',
+              cliente.cedula_ruc  || '9999999999999',
+              cliente.email       || null,
+              cliente.telefono    || null,
+              cliente.direccion   || null,
+              subtotal,
+              descGlobal,
+              baseImponible,
+              montoIva,
+              total,
+              ivaPct,
+              datos.notas || null
+            ]
+          );
 
       const facturaId = result.insertId;
 
@@ -173,11 +244,13 @@ class FacturaLegacy {
         );
       }
 
-      // 6. Incrementar correlativo de factura
-      await conn.query(
-        `UPDATE empresa_config 
-         SET secuencial_factura = secuencial_factura + 1`
-      );
+      // 6. Incrementar correlativo de factura (solo si existe empresa_config)
+      if (tieneEmpresaConfig) {
+        await conn.query(
+          `UPDATE empresa_config 
+           SET secuencial_factura = secuencial_factura + 1`
+        );
+      }
 
       await conn.commit();
 
@@ -248,13 +321,22 @@ class FacturaLegacy {
   }
 
   static async obtenerPorVentaId(venta_id) {
-    const [facturas] = await pool.query(
-      `SELECT id, numero_factura 
-       FROM facturas 
-       WHERE (venta_id = ? OR venta_pos_id = ?) AND estado != 'anulada' 
-       LIMIT 1`,
-      [venta_id, venta_id]
-    );
+    const tieneVentaPosId = await FacturaLegacy._tieneColumnaVentaPosIdFacturas();
+    const [facturas] = tieneVentaPosId
+      ? await pool.query(
+          `SELECT id, numero_factura 
+           FROM facturas 
+           WHERE (venta_id = ? OR venta_pos_id = ?) AND estado != 'anulada' 
+           LIMIT 1`,
+          [venta_id, venta_id]
+        )
+      : await pool.query(
+          `SELECT id, numero_factura 
+           FROM facturas 
+           WHERE venta_id = ? AND estado != 'anulada' 
+           LIMIT 1`,
+          [venta_id]
+        );
     return facturas.length > 0 ? facturas[0] : null;
   }
 
@@ -366,7 +448,7 @@ class FacturaLegacy {
 
     const factura = await FacturaLegacy.crear({
       usuario_id: usuarioId,
-      venta_pos_id: ventaId,
+      venta_id: ventaId,
       con_iva: venta.monto_iva > 0,
       descuento: Number(venta.descuento || 0),
       notas: `Factura generada desde Venta #${ventaId}`,
@@ -388,13 +470,27 @@ class FacturaLegacy {
     });
 
     if (factura && factura.id) {
-      await pool.query('UPDATE facturas SET venta_pos_id = ? WHERE id = ?', [ventaId, factura.id]);
+      const tieneVentaPosId = await FacturaLegacy._tieneColumnaVentaPosIdFacturas();
+      if (tieneVentaPosId) {
+        await pool.query('UPDATE facturas SET venta_pos_id = ?, venta_id = ? WHERE id = ?', [ventaId, ventaId, factura.id]);
+      } else {
+        await pool.query('UPDATE facturas SET venta_id = ? WHERE id = ?', [ventaId, factura.id]);
+      }
     }
 
     return factura || null;
   }
 
   static async obtenerConfigEmpresa() {
+    const tieneEmpresaConfig = await FacturaLegacy._tieneTablaEmpresaConfig();
+    if (!tieneEmpresaConfig) {
+      return {
+        razon_social: 'BATERIAS AL COSTO',
+        iva_porcentaje: 15,
+        prefijo_factura: 'FAC',
+        secuencial_factura: 1
+      };
+    }
     const [rows] = await pool.query('SELECT * FROM empresa_config LIMIT 1');
     return rows[0] || null;
   }

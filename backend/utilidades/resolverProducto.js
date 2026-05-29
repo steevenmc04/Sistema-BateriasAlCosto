@@ -2,6 +2,7 @@ import pool from '../configuracion/baseDeDatos.js';
 
 const TIPOS_VALIDOS = new Set(['bateria', 'varios', 'chatarra']);
 let cacheTieneColumnaTipo = null;
+let cacheTieneColumnaTipoInventario = null;
 
 const normalizar = (valor) => String(valor || '').trim().toLowerCase();
 const aSlug = (valor) =>
@@ -28,6 +29,24 @@ async function tieneColumnaTipo(usarPool) {
     cacheTieneColumnaTipo = false;
   }
   return cacheTieneColumnaTipo;
+}
+
+async function tieneColumnaTipoInventario(usarPool) {
+  if (cacheTieneColumnaTipoInventario !== null) return cacheTieneColumnaTipoInventario;
+  try {
+    const [rows] = await usarPool.query(
+      `SELECT 1
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'productos'
+         AND COLUMN_NAME = 'tipo_inventario'
+       LIMIT 1`
+    );
+    cacheTieneColumnaTipoInventario = rows.length > 0;
+  } catch {
+    cacheTieneColumnaTipoInventario = false;
+  }
+  return cacheTieneColumnaTipoInventario;
 }
 
 function inferirTipoProducto(producto = {}) {
@@ -99,17 +118,19 @@ async function crearProductoSiNoExiste(usarPool, datos) {
 
   const tipo = TIPOS_VALIDOS.has(tipoInventario) ? tipoInventario : 'bateria';
   const existeColumnaTipo = await tieneColumnaTipo(usarPool);
+  const existeColumnaTipoInventario = await tieneColumnaTipoInventario(usarPool);
+  const columnaTipo = existeColumnaTipo ? 'tipo' : (existeColumnaTipoInventario ? 'tipo_inventario' : null);
   const marcaLimpia = String(marca || '').trim();
   const tipoCajaLimpio = String(tipoCaja || '').trim();
   const nombre = String(nombreBase || `${marcaLimpia} ${tipoCajaLimpio}`.trim() || 'Producto').trim();
   const categoriaId = await obtenerCategoriaId(usarPool, tipo);
 
   if (tipo === 'varios') {
-    const [existenteVario] = existeColumnaTipo
+    const [existenteVario] = columnaTipo
       ? await usarPool.query(
           `SELECT id
            FROM productos
-           WHERE tipo = 'varios' AND LOWER(nombre) = ?
+           WHERE ${columnaTipo} = 'varios' AND LOWER(nombre) = ?
            LIMIT 1`,
           [normalizar(nombre)]
         )
@@ -123,11 +144,11 @@ async function crearProductoSiNoExiste(usarPool, datos) {
         );
     if (existenteVario.length > 0) return existenteVario[0].id;
   } else {
-    const [existente] = existeColumnaTipo
+    const [existente] = columnaTipo
       ? await usarPool.query(
           `SELECT id
            FROM productos
-           WHERE tipo = ? AND LOWER(marca) = ? AND LOWER(COALESCE(tipo_caja, '')) = ?
+           WHERE ${columnaTipo} = ? AND LOWER(marca) = ? AND LOWER(COALESCE(tipo_caja, '')) = ?
            LIMIT 1`,
           [tipo, normalizar(marcaLimpia), normalizar(tipoCajaLimpio)]
         )
@@ -151,11 +172,11 @@ async function crearProductoSiNoExiste(usarPool, datos) {
   const baseCodigo = aSlug(codigoBase) || aSlug(`${prefijo}-${marcaLimpia}-${tipoCajaLimpio}`) || `${prefijo}-${Date.now()}`;
   const codigo = await generarCodigoUnico(usarPool, tipo === 'chatarra' && !baseCodigo.startsWith('CHAT-') ? `CHAT-${baseCodigo}` : baseCodigo);
 
-  const [ins] = existeColumnaTipo
+  const [ins] = columnaTipo
     ? await usarPool.query(
         `INSERT INTO productos (
           codigo, nombre, marca, tipo_caja, condicion,
-          categoria_id, tipo, precio_costo, precio_venta, activo
+          categoria_id, ${columnaTipo}, precio_costo, precio_venta, activo
         ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 1)`,
         [codigo, nombre, marcaLimpia || nombre, tipoCajaLimpio || '-', condicion || 'Nueva', categoriaId, tipo]
       )
@@ -177,9 +198,11 @@ async function crearProductoSiNoExiste(usarPool, datos) {
 
 async function obtenerProductoPorId(usarPool, productoId) {
   const existeColumnaTipo = await tieneColumnaTipo(usarPool);
-  const [rows] = existeColumnaTipo
+  const existeColumnaTipoInventario = await tieneColumnaTipoInventario(usarPool);
+  const columnaTipo = existeColumnaTipo ? 'tipo' : (existeColumnaTipoInventario ? 'tipo_inventario AS tipo' : "'' AS tipo");
+  const [rows] = (existeColumnaTipo || existeColumnaTipoInventario)
     ? await usarPool.query(
-        `SELECT id, codigo, nombre, marca, tipo_caja, condicion, tipo
+        `SELECT id, codigo, nombre, marca, tipo_caja, condicion, ${columnaTipo}
          FROM productos
          WHERE id = ?
          LIMIT 1`,

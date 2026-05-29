@@ -12,12 +12,60 @@ import pool from '../configuracion/baseDeDatos.js';
  * Gestiona el catálogo de productos unificado y su stock actual.
  */
 class Producto {
+  static _cacheTieneColumnaTipo = null;
+  static _cacheTieneColumnaTipoInventario = null;
+
+  static async _tieneColumnaTipo() {
+    if (Producto._cacheTieneColumnaTipo !== null) return Producto._cacheTieneColumnaTipo;
+    try {
+      const [rows] = await pool.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tipo'
+         LIMIT 1`
+      );
+      Producto._cacheTieneColumnaTipo = rows.length > 0;
+    } catch {
+      Producto._cacheTieneColumnaTipo = false;
+    }
+    return Producto._cacheTieneColumnaTipo;
+  }
+
+  static async _tieneColumnaTipoInventario() {
+    if (Producto._cacheTieneColumnaTipoInventario !== null) return Producto._cacheTieneColumnaTipoInventario;
+    try {
+      const [rows] = await pool.query(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'productos'
+           AND COLUMN_NAME = 'tipo_inventario'
+         LIMIT 1`
+      );
+      Producto._cacheTieneColumnaTipoInventario = rows.length > 0;
+    } catch {
+      Producto._cacheTieneColumnaTipoInventario = false;
+    }
+    return Producto._cacheTieneColumnaTipoInventario;
+  }
+
+  static async _selectTipoSql() {
+    const tieneTipo = await Producto._tieneColumnaTipo();
+    if (tieneTipo) return 'p.tipo AS tipo';
+    const tieneTipoInventario = await Producto._tieneColumnaTipoInventario();
+    if (tieneTipoInventario) return 'p.tipo_inventario AS tipo';
+    return "'' AS tipo";
+  }
+
   /**
    * Obtiene la lista de todos los productos activos con su categoría y stock actual.
    */
   static async listarTodos({ buscar = '', categoriaId = null, soloActivos = true } = {}) {
+    const tipoSelect = await Producto._selectTipoSql();
     let sql = `
-      SELECT p.id, p.categoria_id, p.tipo, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
+      SELECT p.id, p.categoria_id, ${tipoSelect}, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
              p.descripcion, p.marca, p.modelo, p.condicion, p.tipo_caja, 
              p.precio_costo, p.precio_venta, p.stock_minimo, p.activo,
              COALESCE(s.cantidad, 0) AS stock_actual, p.creado_en
@@ -53,8 +101,9 @@ class Producto {
    * Obtiene un producto por su ID, incluyendo categoría y stock actual.
    */
   static async obtenerPorId(id) {
+    const tipoSelect = await Producto._selectTipoSql();
     const [filas] = await pool.query(
-      `SELECT p.id, p.categoria_id, p.tipo, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
+      `SELECT p.id, p.categoria_id, ${tipoSelect}, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
               p.descripcion, p.marca, p.modelo, p.condicion, p.tipo_caja, 
               p.precio_costo, p.precio_venta, p.stock_minimo, p.activo,
               COALESCE(s.cantidad, 0) AS stock_actual
@@ -69,10 +118,11 @@ class Producto {
 
    /**
     * Busca un producto por su código de barras o código único.
-    */
+   */
    static async buscarPorCodigo(codigo) {
+    const tipoSelect = await Producto._selectTipoSql();
      const [filas] = await pool.query(
-       `SELECT p.id, p.categoria_id, p.tipo, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
+       `SELECT p.id, p.categoria_id, ${tipoSelect}, c.nombre AS categoria_nombre, p.codigo, p.nombre, 
               p.descripcion, p.marca, p.modelo, p.condicion, p.tipo_caja, 
               p.precio_costo, p.precio_venta, p.stock_minimo, p.activo,
               COALESCE(s.cantidad, 0) AS stock_actual

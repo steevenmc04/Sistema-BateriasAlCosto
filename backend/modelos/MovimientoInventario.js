@@ -9,6 +9,29 @@ import pool from '../configuracion/baseDeDatos.js';
  * @version 1.0.0
  */
 class MovimientoInventario {
+  static _cacheTieneTablaInventarioBaterias = null;
+
+  static async _tieneTablaInventarioBaterias(conn = pool) {
+    if (MovimientoInventario._cacheTieneTablaInventarioBaterias !== null) {
+      return MovimientoInventario._cacheTieneTablaInventarioBaterias;
+    }
+
+    try {
+      const [rows] = await conn.query(
+        `SELECT 1
+         FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'inventario_baterias'
+         LIMIT 1`
+      );
+      MovimientoInventario._cacheTieneTablaInventarioBaterias = rows.length > 0;
+    } catch {
+      MovimientoInventario._cacheTieneTablaInventarioBaterias = false;
+    }
+
+    return MovimientoInventario._cacheTieneTablaInventarioBaterias;
+  }
+
   /**
    * Registra un movimiento en el Kardex y actualiza la cantidad en inventario_stock de forma transaccional.
    * Si conexionTransaccional es provista, se une a la transacción existente.
@@ -71,14 +94,17 @@ class MovimientoInventario {
         [producto_id, stock_posterior, stock_posterior]
       );
 
-      // 4. Sincronizar stock con la tabla legada inventario_baterias
-      await conn.query(
-        `UPDATE inventario_baterias ib
-         INNER JOIN productos p ON p.codigo = ib.codigo
-         SET ib.cantidad = ?
-         WHERE p.id = ?`,
-        [stock_posterior, producto_id]
-      );
+      // 4. Sincronizar stock con la tabla legada inventario_baterias (si existe)
+      const tieneTablaInventarioBaterias = await MovimientoInventario._tieneTablaInventarioBaterias(conn);
+      if (tieneTablaInventarioBaterias) {
+        await conn.query(
+          `UPDATE inventario_baterias ib
+           INNER JOIN productos p ON p.codigo = ib.codigo
+           SET ib.cantidad = ?
+           WHERE p.id = ?`,
+          [stock_posterior, producto_id]
+        );
+      }
 
       if (!conexionTransaccional) {
         await conn.commit();

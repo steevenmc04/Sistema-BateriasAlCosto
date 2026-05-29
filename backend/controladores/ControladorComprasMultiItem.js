@@ -17,8 +17,6 @@ class ControladorComprasMultiItem {
     const usuario_ip = req.ip;
 
     try {
-      console.log('PAYLOAD COMPRA:', JSON.stringify(req.body, null, 2));
-
       Logger.info('Compras', 'Iniciando validacion de compra multi-item', {
         numero_factura,
         usuario_id,
